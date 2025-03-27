@@ -1,8 +1,4 @@
 .page {
-  --text-color: #493628;
-  --button-primary-hover: #383838;
-  --button-secondary-hover: #f2f2f2;
-
   position: absolute;
   min-height: 100svh;
   width: 393px;
@@ -18,17 +14,13 @@
   width: 100%;
   height: 100svh;
   overflow-y: auto;
+
+  -ms-overflow-style: none; /* 인터넷 익스플로러 */
+  scrollbar-width: none; /* 파이어폭스 */
 }
 
-.main {
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  gap: 32px;
-  height: 1000px;
-  background-color: #F2EFE7;
-  overflow-y:auto;
-
+.container:-webkit-scrollbar {
+  display: none;
 }
 
 .headercover {
@@ -46,29 +38,77 @@
   top:0;
   height: 146px;
   gap: 15px;
-  padding:30px;
+  padding: 30px;
 
   background-color: #F4F0F1;
   opacity: 80%;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  flex-grow: 1;
+
+  gap: 30px;
+  padding: 30px 45px 30px 45px;
+  background-color: var(--background);
+  overflow-y:auto;
+}
+
+.divider {
+  height: 1px;
+  width: 100%;
+  background-color: var(--foreground);
+}
+
+.datecounter {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+} 
+
+.dateelement {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 25%;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  width: 100%;
+}
+
+.galleryPhoto {
+  background-color: #D9D9D9;
+  aspect-ratio: 3 / 4;
 }
 
 .content {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  align-items: center;
 
   gap: 5px;
 }
 
 .title {
   font-size: 40px;
-  color: #493628;
+}
+
+.header {
+  font-size: 20px;
 }
 
 .body {
+  font-size: 14px;
+}
+
+.little {
   font-size: 12px;
-  color: #493628;
 }
 
 .footer {

@@ -1,6 +1,6 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #F2EFE7;
+  --foreground: #493628;
 }
 
 html,
@@ -11,7 +11,11 @@ body {
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  background-image: url("/background.svg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  width: auto;
+  height: 100vh;
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
