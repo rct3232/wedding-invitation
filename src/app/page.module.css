@@ -61,19 +61,6 @@
   background-color: var(--foreground);
 }
 
-.datecounter {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-} 
-
-.dateelement {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 25%;
-}
-
 .gallery {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

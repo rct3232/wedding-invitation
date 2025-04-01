@@ -2,9 +2,7 @@
 
 import React, { useEffect } from 'react';
 
-const clientId = '9syct7whuf';
-
-export default function Map() {
+export default function Map(props) {
   useEffect(() => {
     const initMap = () => {
       const mapOptions = {
@@ -27,7 +25,7 @@ export default function Map() {
     } else {
       const mapScript = document.createElement('script');
       mapScript.onload = () => initMap();
-      mapScript.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${clientId}`;
+      mapScript.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${props.clientId}`;
       document.head.appendChild(mapScript);
     }
   }, []);

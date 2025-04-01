@@ -1,11 +1,14 @@
 import Image from "next/image";
 import styles from "./page.module.css";
-import Map from "./map.js";
+
+import Map from "./modules/map.js";
+import Greeting from "./modules/greeting.js"
+import DateCounter from "./modules/dateCounter";
 
 const data = {
   manName: {first: "철수", last: "김"},
   womanName: {first: "영희", last: "이"},
-  date: {year: 9999, month: 99, day: 99, dayOfWeek: "일", hour: "99", minute: "99"},
+  date: new Date('2025-09-28T12:00:00+0900'),
   place: {name: "강남구 ABC컨벤션 123홀", address: "강남구 강남대로 99길 999-999 가나다빌딩"},
   parent: {man: {father: "홍길동", mother: "홍길순"}, woman: {father: "홍길동", mother: "홍길순"}},
   greeting: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam congue magna a orci scelerisque, ut feugiat est gravida. Cras vehicula, urna a iaculis aliquet, lacus sapien semper odio, vel hendrerit orci augue quis purus. Suspendisse varius blandit ligula, a pretium lorem bibendum nec.",
@@ -13,9 +16,9 @@ const data = {
   account: {man: {self: {bank: "abc은행", account: "111-222222-33333"}, father: {bank: "abc은행", account: "111-222222-33333"}, mother: {bank: "abc은행", account: "111-222222-33333"}}, woman: {self: {bank: "abc은행", account: "111-222222-33333"}, father: {bank: "abc은행", account: "111-222222-33333"}, mother: {bank: "abc은행", account: "111-222222-33333"}}}
 }
 
-const dDayCount = {
-  day: 9999, hour: 99, minute: 99, second: 99
-}
+const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
+
+const clientId = '9syct7whuf';
 
 export default function Home() {
   return (
@@ -26,43 +29,17 @@ export default function Home() {
         <div className={styles.nametag}>
           <div className={styles.title}>{data.manName.first} 💍 {data.womanName.first}</div>
           <div className={styles.detail} style={{alignItems: 'center'}}>
-            <div className={styles.little}>{data.date.year}년 {data.date.month}월 {data.date.day}일 {data.date.dayOfWeek}요일 {data.date.hour}:{data.date.minute}</div>
+            <div className={styles.little}>{data.date.getFullYear()}년 {data.date.getMonth()}월 {data.date.getDate()}일 {dayOfWeek[data.date.getDay()]}요일 {data.date.getHours()}:{data.date.getMinutes()}</div>
             <div className={styles.little}>{data.place.name}</div>
           </div>
         </div>
         <main className={styles.main}>
-
           <div className={styles.divider}/>
-
-          <div className={styles.body} style={{textAlign: 'center', lineHeight: 2}}>{data.greeting}</div>
-          <div className={styles.detail}>
-            <div className={styles.body} style={{textAlign: 'center'}}>{data.parent.man.father} · {data.parent.man.mother}의 아들
-              <span className={styles.body} style={{fontWeight: 'bold'}}> {data.manName.last}{data.manName.first}</span>
-            </div>
-            <div className={styles.body} style={{textAlign: 'center'}}>{data.parent.woman.father} · {data.parent.woman.mother}의 딸
-              <span className={styles.body} style={{fontWeight: 'bold'}}> {data.womanName.last}{data.womanName.first}</span>
-            </div>
-          </div>
-          <Image src="/flower.png" alt="flower image" width="82" height="124" style={{margin: "auto"}}/>
-
+          <Greeting data={data}/>
           <div className={styles.divider}/>
 
           <div className={styles.content}>
-            <div className={styles.header}>결혼식 까지</div>
-            <div className={styles.datecounter}>
-              <div className={styles.dateelement}>
-                <p style={{fontWeight: 'bold', fontSize: '20px'}}>{dDayCount.day}</p><p className={styles.body}>일</p>
-              </div>
-              <div className={styles.dateelement}>
-                <p style={{fontWeight: 'bold', fontSize: '20px'}}>{dDayCount.hour}</p><p className={styles.body}>시간</p>
-              </div>
-              <div className={styles.dateelement}>
-                <p style={{fontWeight: 'bold', fontSize: '20px'}}>{dDayCount.minute}</p><p className={styles.body}>분</p>
-              </div>
-              <div className={styles.dateelement}>
-                <p style={{fontWeight: 'bold', fontSize: '20px'}}>{dDayCount.second}</p><p className={styles.body}>초</p>
-              </div>
-            </div>
+          <DateCounter date={data.date}/>
           </div>
 
           <div className={styles.gallery}>
@@ -88,7 +65,7 @@ export default function Home() {
 
           <div className={styles.header}>오시는 길</div>
           <div className={styles.detail}>
-            <Map/>
+            <Map clientId={clientId}/>
             <div className={styles.little} style={{marginLeft: 'auto'}}>{data.place.address}</div>
           </div>
           <div className={styles.content}>

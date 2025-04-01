@@ -1,0 +1,14 @@
+.datecounter {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+
+    
+  } 
+  
+  .dateelement {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 25%;
+  }
