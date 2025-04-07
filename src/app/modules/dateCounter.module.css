@@ -1,14 +1,17 @@
-.datecounter {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-
-    
-  } 
+.container {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+} 
   
-  .dateelement {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 25%;
-  }
+.element {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 25%;
+}
+
+.leftNumber {
+  font-weight: bold;
+  font-size: 20px;
+}

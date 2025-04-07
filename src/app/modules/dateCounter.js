@@ -30,18 +30,18 @@ export default function DateCounter (props) {
   return (
     <div className="detail">
       <div className="header">결혼식 까지</div>
-        <div className={styles.datecounter}>
-          <div className={styles.dateelement}>
-            <p style={{fontWeight: 'bold', fontSize: '20px'}}>{timeLeft[0]}</p><p className={styles.body}>일</p>
+        <div className={styles.container}>
+          <div className={styles.element}>
+            <p className={styles.leftNumber}>{timeLeft[0]}</p><p className="little">일</p>
           </div>
-          <div className={styles.dateelement}>
-            <p style={{fontWeight: 'bold', fontSize: '20px'}}>{timeLeft[1]}</p><p className={styles.body}>시간</p>
+          <div className={styles.element}>
+            <p className={styles.leftNumber}>{timeLeft[1]}</p><p className="little">시간</p>
           </div>
-          <div className={styles.dateelement}>
-            <p style={{fontWeight: 'bold', fontSize: '20px'}}>{timeLeft[2]}</p><p className={styles.body}>분</p>
+          <div className={styles.element}>
+            <p className={styles.leftNumber}>{timeLeft[2]}</p><p className="little">분</p>
           </div>
-          <div className={styles.dateelement}>
-          <p style={{fontWeight: 'bold', fontSize: '20px'}}>{timeLeft[3]}</p><p className={styles.body}>초</p>
+          <div className={styles.element}>
+          <p className={styles.leftNumber}>{timeLeft[3]}</p><p className="little">초</p>
         </div>
       </div>
     </div>

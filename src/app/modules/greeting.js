@@ -12,7 +12,6 @@ export default function Greeting(props) {
               <span className="content" style={{fontWeight: 'bold'}}> {props.data.womanName.last}{props.data.womanName.first}</span>
             </div>
           </div>
-          <Image src="/flower.png" alt="flower image" width="82" height="124" style={{margin: "auto"}}/>
         </div>
     );
 }
