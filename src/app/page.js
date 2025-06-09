@@ -1,10 +1,10 @@
 import Image from "next/image";
 import styles from "./page.module.css";
 
-import BackgroundCollage from "./modules/backgroundCollage";
 import Map from "./modules/map.js";
 import Greeting from "./modules/greeting.js"
 import DateCounter from "./modules/dateCounter";
+import Galley from "./modules/gallery/gallery";
 
 const data = {
   manName: {first: "철수", last: "김"},
@@ -24,7 +24,6 @@ const clientId = '9syct7whuf';
 export default function Home() {
   return (
     <div>
-      <BackgroundCollage/>
       <div className={styles.page}>
         <Image src="/header_image.jpg" alt="Header picture" fill objectFit="cover" objectPosition="center"/>
         <div className={styles.container}>
@@ -45,24 +44,7 @@ export default function Home() {
             <DateCounter date={data.date}/>
             </div>
 
-            <div className={styles.gallery}>
-              <div className={styles.galleryPhoto}></div>
-              <div className={styles.galleryPhoto}></div>
-              <div className={styles.galleryPhoto}></div>
-
-              <div className={styles.galleryPhoto}></div>
-              <div className={styles.galleryPhoto}></div>
-              <div className={styles.galleryPhoto}></div>
-
-              <div className={styles.galleryPhoto}></div>
-              <div className={styles.galleryPhoto}></div>
-              <div className={styles.galleryPhoto}></div>
-
-              <div className={styles.galleryPhoto}></div>
-              <div className={styles.galleryPhoto}></div>
-              <div className={styles.galleryPhoto}></div>
-            </div>
-            <a className={styles.body} style={{textDecoration: 'underline', fontWeight: 'bold', margin: 'auto'}} href="/">더보기</a>
+            <Galley/>
 
             <div className={styles.divider}/>
 
@@ -89,46 +71,46 @@ export default function Home() {
             <div className={styles.bankAccount} style={{backgroundColor: '#889EB0'}}>
               <div className={styles.banner}>
                 <div className={styles.little} style={{marginRight: 'auto'}}>신랑측 계좌번호</div>
-                <div style={{position: 'relative', alignItems: 'stretch', aspectRatio: '1 / 1'}}><Image src="/accordion.png" fill objectFit="cover" objectPosition="center"/></div>
+                <div style={{position: 'relative', alignItems: 'stretch', aspectRatio: '1 / 1'}}><Image src="/accordion.png" alt="." fill objectFit="cover" objectPosition="center"/></div>
               </div>
               <div className={styles.body}>
                 <div className={styles.row}>
                   <div className={styles.little} style={{fontWeight: 'bold'}}>신랑 {data.manName.last}{data.manName.first}</div>
                   <div className={styles.little} style={{marginLeft: 'auto'}}>{data.account.man.self.bank} {data.account.man.self.account}</div>
-                  <div style={{position: 'relative', alignItems: 'stretch', aspectRatio: '1 / 1'}}><Image src="/copy.png" fill objectFit="cover" objectPosition="center"/></div>
+                  <div style={{position: 'relative', alignItems: 'stretch', aspectRatio: '1 / 1'}}><Image src="/copy.png" alt="." fill objectFit="cover" objectPosition="center"/></div>
                 </div>
                 <div className={styles.row}>
                   <div className={styles.little} style={{fontWeight: 'bold'}}>아버지 {data.parent.man.father}</div>
                   <div className={styles.little} style={{marginLeft: 'auto'}}>{data.account.man.father.bank} {data.account.man.father.account}</div>
-                  <div style={{position: 'relative', alignItems: 'stretch', aspectRatio: '1 / 1'}}><Image src="/copy.png" fill objectFit="cover" objectPosition="center"/></div>
+                  <div style={{position: 'relative', alignItems: 'stretch', aspectRatio: '1 / 1'}}><Image src="/copy.png" alt="." fill objectFit="cover" objectPosition="center"/></div>
                 </div>
                 <div className={styles.row}>
                   <div className={styles.little} style={{fontWeight: 'bold'}}>어머니 {data.parent.man.mother}</div>
                   <div className={styles.little} style={{marginLeft: 'auto'}}>{data.account.man.mother.bank} {data.account.man.mother.account}</div>
-                  <div style={{position: 'relative', alignItems: 'stretch', aspectRatio: '1 / 1'}}><Image src="/copy.png" fill objectFit="cover" objectPosition="center"/></div>
+                  <div style={{position: 'relative', alignItems: 'stretch', aspectRatio: '1 / 1'}}><Image src="/copy.png" alt="." fill objectFit="cover" objectPosition="center"/></div>
                 </div>
               </div>
             </div>
             <div className={styles.bankAccount} style={{backgroundColor: '#C39898'}}>
               <div className={styles.banner}>
                 <div className={styles.little} style={{marginRight: 'auto'}}>신부측 계좌번호</div>
-                <div style={{position: 'relative', alignItems: 'stretch', aspectRatio: '1 / 1'}}><Image src="/accordion.png" fill objectFit="cover" objectPosition="center"/></div>
+                <div style={{position: 'relative', alignItems: 'stretch', aspectRatio: '1 / 1'}}><Image src="/accordion.png" alt="." fill objectFit="cover" objectPosition="center"/></div>
               </div>
               <div className={styles.body}>
                 <div className={styles.row}>
                   <div className={styles.little} style={{fontWeight: 'bold'}}>신랑 {data.womanName.last}{data.womanName.first}</div>
                   <div className={styles.little} style={{marginLeft: 'auto'}}>{data.account.woman.self.bank} {data.account.woman.self.account}</div>
-                  <div style={{position: 'relative', alignItems: 'stretch', aspectRatio: '1 / 1'}}><Image src="/copy.png" fill objectFit="cover" objectPosition="center"/></div>
+                  <div style={{position: 'relative', alignItems: 'stretch', aspectRatio: '1 / 1'}}><Image src="/copy.png" alt="." fill objectFit="cover" objectPosition="center"/></div>
                 </div>
                 <div className={styles.row}>
                   <div className={styles.little} style={{fontWeight: 'bold'}}>아버지 {data.parent.woman.father}</div>
                   <div className={styles.little} style={{marginLeft: 'auto'}}>{data.account.woman.father.bank} {data.account.woman.father.account}</div>
-                  <div style={{position: 'relative', alignItems: 'stretch', aspectRatio: '1 / 1'}}><Image src="/copy.png" fill objectFit="cover" objectPosition="center"/></div>
+                  <div style={{position: 'relative', alignItems: 'stretch', aspectRatio: '1 / 1'}}><Image src="/copy.png" alt="." fill objectFit="cover" objectPosition="center"/></div>
                 </div>
                 <div className={styles.row}>
                   <div className={styles.little} style={{fontWeight: 'bold'}}>어머니 {data.parent.woman.mother}</div>
                   <div className={styles.little} style={{marginLeft: 'auto'}}>{data.account.woman.mother.bank} {data.account.woman.mother.account}</div>
-                  <div style={{position: 'relative', alignItems: 'stretch', aspectRatio: '1 / 1'}}><Image src="/copy.png" fill objectFit="cover" objectPosition="center"/></div>
+                  <div style={{position: 'relative', alignItems: 'stretch', aspectRatio: '1 / 1'}}><Image src="/copy.png" alt="." fill objectFit="cover" objectPosition="center"/></div>
                 </div>
               </div>
             </div>

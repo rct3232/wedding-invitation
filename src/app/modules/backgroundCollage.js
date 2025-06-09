@@ -5,8 +5,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import styles from "./backgroundCollage.module.css"
 
 export default function BackgroundCollage () {
-  const [innerWidth, setInnerWidth] = useState(window.innerWidth);
-  const [innerHeight, setInnerHeight] = useState(window.innerHeight);
+  const [innerWidth, setInnerWidth] = useState(0);
+  const [innerHeight, setInnerHeight] = useState(0);
   const [columnCount, setColumnCount] = useState(0);
   const [rowCount, setRowCount] = useState(0)
   const [minusMargin, setMinusMargin] = useState([]);
