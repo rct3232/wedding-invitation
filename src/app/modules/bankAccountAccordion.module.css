@@ -1,0 +1,68 @@
+.bankAccount {
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 8px;
+  }
+  
+  .banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ccc;
+    cursor: pointer;
+  }
+  
+  .little,
+  .littleBold {
+    font-size: 16px;
+  }
+  
+  .littleBold {
+    font-weight: bold;
+  }
+  
+  /* 내용 영역 */
+  .body {
+    padding-top: 10px;
+  }
+  
+  /* 각 row를 CSS Grid로 처리  
+     첫 번째 열(이름): minmax(84px, 1fr) → 최소 84px 이상, 남는 공간 활용
+     두 번째 열(계좌번호): auto → 내용 기반 너비, 오른쪽 정렬 적용
+     세 번째 열(아이콘): 24px 고정 */
+  .row {
+    display: grid;
+    grid-template-columns: minmax(84px, 1fr) auto 24px;
+    align-items: center;
+    column-gap: 4px;
+    margin-bottom: 8px;
+  }
+  
+  /* 계좌번호 데이터 영역 */
+  .data {
+    text-align: right;
+    font-size: 16px;
+  }
+  
+  /* 아코디언 아이콘 (12px 크기) */
+  .iconAccordion {
+    width: 12px;
+    height: 12px;
+    background-image: url("/accordion.png");
+    background-size: contain;
+    background-position: center;
+    flex-shrink: 0;
+  }
+  
+  /* 복사 아이콘 (12px 크기) - cursor 포인터 추가 */
+  .iconCopy {
+    width: 12px;
+    height: 12px;
+    background-image: url("/copy.png");
+    background-size: contain;
+    background-position: center;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  
