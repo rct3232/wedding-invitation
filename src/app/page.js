@@ -14,7 +14,54 @@ const data = {
   parent: {man: {father: "홍길동", mother: "홍길순"}, woman: {father: "홍길동", mother: "홍길순"}},
   greeting: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam congue magna a orci scelerisque, ut feugiat est gravida. Cras vehicula, urna a iaculis aliquet, lacus sapien semper odio, vel hendrerit orci augue quis purus. Suspendisse varius blandit ligula, a pretium lorem bibendum nec.",
   route: [{type: "대중교통", content: ["2호선 · 분당선 강남역 하차 후\n12번 출구에서 강남99번 환승, 가나다빌딩 하차", "2호선 · 분당선 강남역 하차 후\n1번 출구에서 ABC웨딩홀 셔틀운영 (11시~13시, 15분 간격)"]}, {type: "주차", content: ["가나다빌딩 주차장 이용 (90분 무료)\n* 이후 10분당 2000원"]}],
-  account: {man: {self: {bank: "abc은행", account: "111-222222-33333"}, father: {bank: "abc은행", account: "111-222222-33333"}, mother: {bank: "abc은행", account: "111-222222-33333"}}, woman: {self: {bank: "abc은행", account: "111-222222-33333"}, father: {bank: "abc은행", account: "111-222222-33333"}, mother: {bank: "abc은행", account: "111-222222-33333"}}}
+  account: {man: {self: {bank: "abc은행", account: "111-222222-33333"}, father: {bank: "abc은행", account: "111-222222-33333"}, mother: {bank: "abc은행", account: "111-222222-33333"}}, woman: {self: {bank: "abc은행", account: "111-222222-33333"}, father: {bank: "abc은행", account: "111-222222-33333"}, mother: {bank: "abc은행", account: "111-222222-33333"}}},
+
+  galleryImage: {
+    fullImages: [
+      "00.jpg",
+      "01.jpg",
+      "02.jpg",
+      "03.jpg",
+      "04.jpg",
+      "05.jpg",
+      "06.jpg",
+      "07.jpg",
+      "08.jpg",
+      "09.jpg",
+      "00.jpg",
+      "01.jpg",
+      "02.jpg",
+      "03.jpg",
+      "04.jpg",
+      "05.jpg",
+      "06.jpg",
+      "07.jpg",
+      "08.jpg",
+      "09.jpg"
+    ],
+    thumbImages: [
+      "thumb_00.jpg",
+      "thumb_01.jpg",
+      "thumb_02.jpg",
+      "thumb_03.jpg",
+      "thumb_04.jpg",
+      "thumb_05.jpg",
+      "thumb_06.jpg",
+      "thumb_07.jpg",
+      "thumb_08.jpg",
+      "thumb_09.jpg",
+      "thumb_00.jpg",
+      "thumb_01.jpg",
+      "thumb_02.jpg",
+      "thumb_03.jpg",
+      "thumb_04.jpg",
+      "thumb_05.jpg",
+      "thumb_06.jpg",
+      "thumb_07.jpg",
+      "thumb_08.jpg",
+      "thumb_09.jpg"
+    ]
+  }
 }
 
 const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
@@ -44,7 +91,7 @@ export default function Home() {
             <DateCounter date={data.date}/>
             </div>
 
-            <Galley/>
+            <Galley fullImages={data.galleryImage.fullImages} thumbImages={data.galleryImage.thumbImages}/>
 
             <div className={styles.divider}/>
 

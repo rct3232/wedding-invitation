@@ -1,65 +1,103 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styles from "./gallery.module.css";
 
-const EnlargedOverlay = ({ images, index, onClose, onNext, onPrev, onSelect }) => {
+const EnlargedOverlay = ({
+  fullImages,
+  thumbImages,
+  index,
+  onClose,
+  onNext,
+  onPrev,
+  onSelect,
+}) => {
   const thumbRef = useRef(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  // index 변경 시 로딩 상태 초기화
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [index]);
 
   useEffect(() => {
     if (thumbRef.current) {
       const active = thumbRef.current.querySelector(`.${styles.activeThumbnail}`);
       if (active) {
-        active.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+        active.scrollIntoView({
+          behavior: "smooth",
+          inline: "center",
+          block: "nearest",
+        });
       }
     }
   }, [index]);
 
   return (
-    // .overlay는 전체 화면을 덮으며, 클릭 시 onClose가 호출됩니다.
-    <div className={styles.overlay} onClick={onClose}>
-      {/* 콘텐츠 영역은 wrapper로, 콘텐츠 영역 외 클릭은 onClose로 전달되도록 함 */}
-      <div className={styles.contentWrapper} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.enlargedContainer}>
-          {index > 0 && (
-            <button
-              className={styles.prev}
-              onClick={(e) => {
-                e.stopPropagation();
-                onPrev();
-              }}
-            >
-              ⬅
-            </button>
-          )}
+    <div className={styles.overlay}>
+      <div 
+        className={styles.content} 
+        onClick={(e) => {
+          e.stopPropagation(); 
+          onClose();
+        }}
+      >
+        <div
+          className={styles.enlargedContainer}
+          onClick={(e) => {
+            e.stopPropagation(); 
+            onClose();
+          }}
+        >
+          {!imageLoaded && <div className={styles.loader}></div>}
           <img
-            src={images[index]}
+            src={fullImages[index]}
             className={styles.largeImage}
             alt={`Enlarged Image ${index + 1}`}
+            loading="lazy"
+            onLoad={() => setImageLoaded(true)}
             onClick={(e) => e.stopPropagation()}
+            style={{ visibility: imageLoaded ? "visible" : "hidden" }}
           />
-          {index < images.length - 1 && (
-            <button
-              className={styles.next}
-              onClick={(e) => {
-                e.stopPropagation();
-                onNext();
-              }}
-            >
-              ➡
-            </button>
-          )}
         </div>
+
+        {index > 0 && (
+          <button
+            className={styles.prev}
+            onClick={(e) => {
+              e.stopPropagation();
+              onPrev();
+            }}
+          >
+            {"<"}
+          </button>
+        )}
+        {index < fullImages.length - 1 && (
+          <button
+            className={styles.next}
+            onClick={(e) => {
+              e.stopPropagation();
+              onNext();
+            }}
+          >
+            {">"}
+          </button>
+        )}
+
+        {/* 썸네일 바 */}
         <div
           className={styles.thumbnailBar}
           ref={thumbRef}
           onClick={(e) => e.stopPropagation()}
         >
-          {images.map((src, i) => (
+          {thumbImages.map((src, i) => (
             <div
               key={i}
               className={`${styles.thumbnail} ${
                 i === index ? styles.activeThumbnail : ""
               }`}
-              onClick={() => onSelect(i)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect(i);
+              }}
             >
               <img src={src} alt={`Thumbnail ${i + 1}`} loading="lazy" />
             </div>

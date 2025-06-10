@@ -1,52 +1,34 @@
 'use client';
+import React, { useState } from 'react';
+import GalleryGrid from './galleryGrid';
+import ModalGallery from './modalGallery';
+import EnlargedOverlay from './enlargedOverlay';
+import styles from './gallery.module.css';
 
-import { useState } from "react";
-import GalleryGrid from "./galleryGrid";
-import ModalGallery from "./modalGallery";
-import EnlargedOverlay from "./enlargedOverlay";
-import styles from "./gallery.module.css";
+const Gallery = ({
+  fullImages,
+  thumbImages
+}) => {
 
-const Gallery = () => {
-  // 전체 이미지 배열 (실제 이미지 경로로 변경)
-  const images = [
-    "KakaoTalk_20250603_185759437.jpg",
-    "KakaoTalk_20250603_185759437_01.jpg",
-    "KakaoTalk_20250603_185759437_02.jpg",
-    "KakaoTalk_20250603_185759437_03.jpg",
-    "KakaoTalk_20250603_185759437_04.jpg",
-    "KakaoTalk_20250603_185759437_05.jpg",
-    "KakaoTalk_20250603_185759437_06.jpg",
-    "KakaoTalk_20250603_185759437_07.jpg",
-    "KakaoTalk_20250603_185759437_08.jpg",
-    "KakaoTalk_20250603_185759437_09.jpg",
-    "KakaoTalk_20250603_185759437_01.jpg",
-    "KakaoTalk_20250603_185759437_02.jpg",
-    "KakaoTalk_20250603_185759437_03.jpg",
-    "KakaoTalk_20250603_185759437_04.jpg",
-    "KakaoTalk_20250603_185759437_05.jpg",
-    "KakaoTalk_20250603_185759437_06.jpg",
-    "KakaoTalk_20250603_185759437_07.jpg",
-    "KakaoTalk_20250603_185759437_08.jpg",
-    "KakaoTalk_20250603_185759437_09.jpg"
-  ];
-  // 메인 갤러리에서는 처음 9장만 보여줌
-  const mainImages = images.slice(0, 9);
+  // 메인 그리드에서는 썸네일 배열의 앞 9개만 보여줍니다.
+  const mainThumbs = thumbImages.slice(0, 9);
 
-  // overlayData: 오버레이가 열렸을 때, full images 배열에서 몇 번째 이미지를 보여줄지 결정
+  // overlay 관련 상태: overlay가 열리면 어떤 이미지(인덱스)를 보여줄지 결정
   const [overlayData, setOverlayData] = useState({
     isOpen: false,
-    index: null,
+    index: null
   });
+  // 모달 갤러리 상태
   const [showModal, setShowModal] = useState(false);
+  // 모달 종료 애니메이션 적용을 위한 상태
+  const [modalExiting, setModalExiting] = useState(false);
 
-  // mainGrid나 모달 갤러리에서 이미지 클릭 시—전역 이미지 배열(full images)에서 해당 이미지의 인덱스(0～8는 메인에서 그대로, 나머지는 모달에서)를 사용
   const openOverlay = (i) => {
     setOverlayData({ isOpen: true, index: i });
   };
   const closeOverlay = () => setOverlayData({ isOpen: false, index: null });
-
   const handleNext = () => {
-    if (overlayData.index < images.length - 1)
+    if (overlayData.index < fullImages.length - 1)
       setOverlayData({ ...overlayData, index: overlayData.index + 1 });
   };
   const handlePrev = () => {
@@ -54,28 +36,40 @@ const Gallery = () => {
       setOverlayData({ ...overlayData, index: overlayData.index - 1 });
   };
 
+  // 모달 종료 애니메이션을 적용한 후 0.5초 뒤 모달을 완전히 닫도록 함
+  const handleModalClose = () => {
+    setModalExiting(true);
+    setTimeout(() => {
+      setShowModal(false);
+      setModalExiting(false);
+    }, 500);
+  };
+
   return (
     <div className={styles.container}>
-      {/* 메인 갤러리 — 처음 9장만 표시 */}
-      <GalleryGrid images={mainImages} onImageClick={(i) => openOverlay(i)} />
-      <a className={styles.body} href="/" onClick={(e) => {
-        e.preventDefault();
-        setShowModal(true);
-      }}>
+      <GalleryGrid thumbImages={mainThumbs} onImageClick={openOverlay} />
+      <a
+        className={styles.more}
+        href="/"
+        onClick={(e) => {
+          e.preventDefault();
+          setShowModal(true);
+        }}
+      >
         더보기
       </a>
-      {/* 전체 이미지 모달 갤러리 */}
       {showModal && (
         <ModalGallery
-          images={images}
-          onImageClick={(i) => openOverlay(i)}
-          onClose={() => setShowModal(false)}
+          thumbImages={thumbImages}
+          onImageClick={openOverlay}
+          onClose={handleModalClose}
+          exit={modalExiting}
         />
       )}
-      {/* 확대 오버레이 (항상 전역 images 배열 사용) */}
       {overlayData.isOpen && (
         <EnlargedOverlay
-          images={images}
+          fullImages={fullImages}
+          thumbImages={thumbImages}
           index={overlayData.index}
           onClose={closeOverlay}
           onNext={handleNext}
