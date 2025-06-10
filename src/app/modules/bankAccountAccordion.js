@@ -3,17 +3,22 @@
 import { useState } from "react";
 import styles from "./bankAccountAccordion.module.css";
 
-const BankAccountAccordion = ({ data }) => {
-  const [isOpenMan, setIsOpenMan] = useState(false);
-  const [isOpenWoman, setIsOpenWoman] = useState(false);
+const BankAccountAccordion = ({ accountInfo }) => {
+  // accountInfo의 길이에 맞춰 초기 상태 배열을 생성 (예, 2개 계좌 섹션)
+  const [openStates, setOpenStates] = useState(
+    new Array(accountInfo.length).fill(false)
+  );
 
-  const toggleMan = () => setIsOpenMan((prev) => !prev);
-  const toggleWoman = () => setIsOpenWoman((prev) => !prev);
+  const toggleAccount = (index) => {
+    setOpenStates((prev) =>
+      prev.map((isOpen, i) => (i === index ? !isOpen : isOpen))
+    );
+  };
 
   const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text)
+    navigator.clipboard
+      .writeText(text)
       .then(() => {
-        // 성공 시 알림 메시지 또는 콘솔 출력
         console.log("복사되었습니다:", text);
       })
       .catch((err) => {
@@ -23,127 +28,44 @@ const BankAccountAccordion = ({ data }) => {
 
   return (
     <div>
-      {/* 신랑측 계좌번호 섹션 */}
-      <div className={styles.bankAccount} style={{ backgroundColor: "#889EB0" }}>
-        <div className={styles.banner}>
-          <div className="little">신랑측 계좌번호</div>
-          {/* 아이콘 클릭 시 해당 섹션 토글 */}
-          <div className={styles.iconAccordion} onClick={toggleMan} />
-        </div>
-        {isOpenMan && (
-          <div className={styles.body}>
-            <div className={styles.row}>
-              <div className="little" style={{ fontWeight: "bold" }}>
-                신랑 {data.manName.last} {data.manName.first}
-              </div>
-              <div className="little">
-                {data.account.man.self.bank} {data.account.man.self.account}
-              </div>
-              <div
-                className={styles.iconCopy}
-                onClick={() =>
-                  copyToClipboard(
-                    `${data.account.man.self.bank} ${data.account.man.self.account}`
-                  )
-                }
-              />
-            </div>
-            <div className={styles.row}>
-              <div className="little" style={{ fontWeight: "bold" }}>
-                아버지 {data.parent.man.father}
-              </div>
-              <div className="little">
-                {data.account.man.father.bank} {data.account.man.father.account}
-              </div>
-              <div
-                className={styles.iconCopy}
-                onClick={() =>
-                  copyToClipboard(
-                    `${data.account.man.father.bank} ${data.account.man.father.account}`
-                  )
-                }
-              />
-            </div>
-            <div className={styles.row}>
-              <div className="little" style={{ fontWeight: "bold" }}>
-                어머니 {data.parent.man.mother}
-              </div>
-              <div className="little">
-                {data.account.man.mother.bank} {data.account.man.mother.account}
-              </div>
-              <div
-                className={styles.iconCopy}
-                onClick={() =>
-                  copyToClipboard(
-                    `${data.account.man.mother.bank} ${data.account.man.mother.account}`
-                  )
-                }
-              />
-            </div>
+      {accountInfo.map((account, index) => (
+        <div
+          key={index}
+          className={styles.bankAccount}
+          style={{ backgroundColor: account.color }}
+        >
+          <div className={styles.banner}>
+            <div className="little">{account.content[0].title}측 계좌번호</div>
+            <div
+              className={styles.iconAccordion}
+              onClick={() => toggleAccount(index)}
+            />
           </div>
-        )}
-      </div>
-
-      {/* 신부측 계좌번호 섹션 */}
-      <div className={styles.bankAccount} style={{ backgroundColor: "#C39898" }}>
-        <div className={styles.banner}>
-          <div className="little">신부측 계좌번호</div>
-          {/* 아이콘 클릭 시 해당 섹션 토글 */}
-          <div className={styles.iconAccordion} onClick={toggleWoman} />
+          {openStates[index] && (
+            <div className={styles.body}>
+              {account.content.map((item, idx) => (
+                <div key={idx} className={styles.row}>
+                  <div className={styles.name} style={{ fontWeight: "bold" }}>
+                    <div className="little">{item.title}</div>
+                    <div className="little">{item.name}</div>
+                  </div>
+                  <div className={styles.data}>
+                    <div className="little">
+                      {item.bank} {item.account}
+                    </div>
+                  </div>
+                  <div
+                    className={styles.iconCopy}
+                    onClick={() =>
+                      copyToClipboard(`${item.bank} ${item.account}`)
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        {isOpenWoman && (
-          <div className={styles.body}>
-            <div className={styles.row}>
-              <div className="little" style={{ fontWeight: "bold" }}>
-                신부 {data.womanName.last} {data.womanName.first}
-              </div>
-              <div className="little">
-                {data.account.woman.self.bank} {data.account.woman.self.account}
-              </div>
-              <div
-                className={styles.iconCopy}
-                onClick={() =>
-                  copyToClipboard(
-                    `${data.account.woman.self.bank} ${data.account.woman.self.account}`
-                  )
-                }
-              />
-            </div>
-            <div className={styles.row}>
-              <div className="little" style={{ fontWeight: "bold" }}>
-                아버지 {data.parent.woman.father}
-              </div>
-              <div className="little">
-                {data.account.woman.father.bank} {data.account.woman.father.account}
-              </div>
-              <div
-                className={styles.iconCopy}
-                onClick={() =>
-                  copyToClipboard(
-                    `${data.account.woman.father.bank} ${data.account.woman.father.account}`
-                  )
-                }
-              />
-            </div>
-            <div className={styles.row}>
-              <div className="little" style={{ fontWeight: "bold" }}>
-                어머니 {data.parent.woman.mother}
-              </div>
-              <div className="little">
-                {data.account.woman.mother.bank} {data.account.woman.mother.account}
-              </div>
-              <div
-                className={styles.iconCopy}
-                onClick={() =>
-                  copyToClipboard(
-                    `${data.account.woman.mother.bank} ${data.account.woman.mother.account}`
-                  )
-                }
-              />
-            </div>
-          </div>
-        )}
-      </div>
+      ))}
     </div>
   );
 };
