@@ -1,0 +1,39 @@
+.guestbook {
+  border: none;
+  width: 100%;
+  font-size: small;
+}
+
+.guestbook::placeholder {
+  opacity: 0.8;
+}
+
+textarea.guestbook {
+  height: 150px;
+  padding: 10px;
+
+  resize: none;
+}
+
+input.guestbook {
+  height: 30px;
+  padding: 6px 10px 6px 10px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 10px;
+}
+
+.submit {
+  text-decoration: underline;
+  font-size: 14px;
+  font-weight: bold;
+  outline: none;
+  border: none;
+  display: block;
+  margin: 20px auto;
+  cursor: pointer;
+}

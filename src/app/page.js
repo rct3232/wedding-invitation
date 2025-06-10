@@ -6,6 +6,7 @@ import Greeting from "./modules/greeting.js"
 import DateCounter from "./modules/dateCounter";
 import Galley from "./modules/gallery/gallery";
 import BankAccountAccordion from "./modules/bankAccountAccordion";
+import Guestbook from "./modules/guestbook";
 
 const data = {
   manName: {first: "철수", last: "김"},
@@ -104,13 +105,8 @@ export default function Home() {
             <div className={styles.divider}/>
             <BankAccountAccordion accountInfo={data.account}/>
             <div className={styles.divider}/>
+            <Guestbook urlPath={urlPath}/>
 
-            <div className={styles.header}>전하고 싶은 말</div>
-            <div className={styles.content}>
-              <textarea className={styles.guestbook} maxLength="183" placeholder="방명록을 남겨주세요"/>
-              <input className={styles.guestbook} placeholder="이름"/>
-            </div>
-            <a className={styles.body} style={{textDecoration: 'underline', fontWeight: 'bold', margin: 'auto'}} href="/">등록</a>
           </main>
           <footer className={styles.footer}>
             <p style={{color: 'white', fontSize: 'xx-small', textAlign: 'center'}}>e-mail: rct3232@gmail.com</p>
