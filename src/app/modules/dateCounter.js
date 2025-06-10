@@ -25,7 +25,7 @@ export default function DateCounter (props) {
     computeTime();
     timerId.current = setInterval(computeTime, INTERVAL);
 
-  }, [])
+  }, [props.date])
 
   return (
     <div className="detail">

@@ -1,5 +1,7 @@
 'use client';
 import React, { useState } from 'react';
+import Link from 'next/link';
+
 import GalleryGrid from './galleryGrid';
 import ModalGallery from './modalGallery';
 import EnlargedOverlay from './enlargedOverlay';
@@ -48,7 +50,7 @@ const Gallery = ({
   return (
     <div className={styles.container}>
       <GalleryGrid thumbImages={mainThumbs} onImageClick={openOverlay} />
-      <a
+      <Link
         className={styles.more}
         href="/"
         onClick={(e) => {
@@ -57,7 +59,7 @@ const Gallery = ({
         }}
       >
         더보기
-      </a>
+      </Link>
       {showModal && (
         <ModalGallery
           thumbImages={thumbImages}
