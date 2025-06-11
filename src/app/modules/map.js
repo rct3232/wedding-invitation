@@ -2,12 +2,15 @@
 
 import React, { useEffect } from 'react';
 
-export default function Map(props) {
+export default function Map({
+  clientId,
+  mapInfo
+}) {
   useEffect(() => {
     const initMap = () => {
       const mapOptions = {
-        center: new naver.maps.LatLng(37.5934323, 127.0017147),
-        zoom: 14,
+        center: new naver.maps.LatLng(mapInfo.center.lat, mapInfo.center.lng),
+        zoom: mapInfo.zoom,
         scrollWheel: false,
         keyboardShortcuts: false,
         zoomControl: true, //줌 컨트롤의 표시 여부
@@ -17,7 +20,7 @@ export default function Map(props) {
         }
       };
 
-      new naver.maps.Marker({position: new naver.maps.LatLng(37.5964866, 126.9971402),map: new naver.maps.Map('map', mapOptions)});
+      new naver.maps.Marker({position: new naver.maps.LatLng(mapInfo.pos.lat, mapInfo.pos.lng),map: new naver.maps.Map('map', mapOptions)});
     };
 
     if (window.naver && window.naver.maps) {
@@ -25,7 +28,7 @@ export default function Map(props) {
     } else {
       const mapScript = document.createElement('script');
       mapScript.onload = () => initMap();
-      mapScript.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${props.clientId}`;
+      mapScript.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${clientId}`;
       document.head.appendChild(mapScript);
     }
   }, []);

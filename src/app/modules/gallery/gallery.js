@@ -9,7 +9,8 @@ import styles from './gallery.module.css';
 
 const Gallery = ({
   fullImages,
-  thumbImages
+  thumbImages,
+  query
 }) => {
 
   // 메인 그리드에서는 썸네일 배열의 앞 9개만 보여줍니다.
@@ -73,6 +74,7 @@ const Gallery = ({
           fullImages={fullImages}
           thumbImages={thumbImages}
           index={overlayData.index}
+          query={query}
           onClose={closeOverlay}
           onNext={handleNext}
           onPrev={handlePrev}

@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useEffect, useRef, useState } from "react";
 import styles from "./gallery.module.css";
 
@@ -5,6 +7,7 @@ const EnlargedOverlay = ({
   fullImages,
   thumbImages,
   index,
+  query,
   onClose,
   onNext,
   onPrev,
@@ -12,11 +15,37 @@ const EnlargedOverlay = ({
 }) => {
   const thumbRef = useRef(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  // imageCache: { [filename]: objectURL }
+  const [imageCache, setImageCache] = useState({});
 
-  // index 변경 시 로딩 상태 초기화
+  // 인덱스가 변경될 때마다 새 이미지 요청 (이미 캐시되어 있으면 재요청하지 않음)
   useEffect(() => {
     setImageLoaded(false);
-  }, [index]);
+    const filename = fullImages[index];
+    if (!filename) return;
+
+    if (imageCache[filename]) {
+      // 캐시된 object URL이 있으면 바로 완료
+      setImageLoaded(true);
+    } else {
+      // 새로 요청: /api/image/:query/:image
+      fetch(`/api/image/${query}/${filename}`)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.blob();
+        })
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          setImageCache((prev) => ({ ...prev, [filename]: url }));
+          setImageLoaded(true);
+        })
+        .catch((error) => {
+          console.error("Error fetching full image:", error);
+        });
+    }
+  }, [index, fullImages, query, imageCache]);
 
   useEffect(() => {
     if (thumbRef.current) {
@@ -33,23 +62,24 @@ const EnlargedOverlay = ({
 
   return (
     <div className={styles.overlay}>
-      <div 
-        className={styles.content} 
+      <div
+        className={styles.content}
         onClick={(e) => {
-          e.stopPropagation(); 
+          e.stopPropagation();
           onClose();
         }}
       >
         <div
           className={styles.enlargedContainer}
           onClick={(e) => {
-            e.stopPropagation(); 
+            e.stopPropagation();
             onClose();
           }}
         >
           {!imageLoaded && <div className={styles.loader}></div>}
           <img
-            src={fullImages[index]}
+            // src로 캐시된 URL을 사용합니다.
+            src={imageCache[fullImages[index]] || ""}
             className={styles.largeImage}
             alt={`Enlarged Image ${index + 1}`}
             loading="lazy"
@@ -88,7 +118,7 @@ const EnlargedOverlay = ({
           ref={thumbRef}
           onClick={(e) => e.stopPropagation()}
         >
-          {thumbImages.map((src, i) => (
+          {thumbImages.map((img, i) => (
             <div
               key={i}
               className={`${styles.thumbnail} ${
@@ -99,7 +129,12 @@ const EnlargedOverlay = ({
                 onSelect(i);
               }}
             >
-              <img src={src} alt={`Thumbnail ${i + 1}`} loading="lazy" />
+              <img
+                // base64 데이터를 data URI 형식으로 사용
+                src={`data:image/jpeg;base64,${img.content}`}
+                alt={`Thumbnail ${i + 1}`}
+                loading="lazy"
+              />
             </div>
           ))}
         </div>

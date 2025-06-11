@@ -106,11 +106,15 @@
 }
 
 @media (max-width: 600px) {
-  /* 추가적인 모바일 대응 스타일이 필요하면 이곳에 기술 */
   .main {
     padding: 20px;
   }
   .footer {
     padding: 5px;
+  }
+  .headercover {
+    height: calc(100svh - 146px);
+    position: relative;
+    overflow: hidden;
   }
 }

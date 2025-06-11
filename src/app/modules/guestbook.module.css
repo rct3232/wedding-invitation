@@ -1,7 +1,7 @@
 .guestbook {
   border: none;
   width: 100%;
-  font-size: small;
+  font-size: 16px;
 }
 
 .guestbook::placeholder {

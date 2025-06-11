@@ -7,13 +7,17 @@ const ModalGallery = ({ thumbImages, onImageClick, onClose, exit }) => (
       ✖
     </button>
     <div className={styles.modalGallery}>
-      {thumbImages.map((src, i) => (
+      {thumbImages.map((img, i) => (
         <div
           key={i}
           className={styles.modalPhoto}
           onClick={() => onImageClick(i)}
         >
-          <img src={src} alt={`Image ${i + 1}`} loading="lazy" />
+          <img 
+            src={`data:image/jpeg;base64,${img.content}`} 
+            alt={`Image ${i + 1}`} 
+            loading="lazy" 
+          />
         </div>
       ))}
     </div>
