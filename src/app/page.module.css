@@ -1,3 +1,20 @@
+.loaderWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* 화면 전체를 중앙 정렬 */
+  background-color: #f8f8f8;
+}
+
+.loader {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #ddd;
+  border-top: 5px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
 .page {
   position: absolute;
   min-height: 100svh;
@@ -5,15 +22,6 @@
   left: 50%;
   top: 0%;
   transform: translate(-50%);
-}
-
-/* 모바일 디바이스: 600px 이하일 경우 viewport에 맞춤 */
-@media (max-width: 600px) {
-  .page {
-    width: 100vw;
-    left: 0;
-    transform: none;
-  }
 }
 
 .container {
@@ -51,6 +59,14 @@
   background-color: #FAFAFA;
   opacity: 80%;
   z-index: 200;
+}
+
+/* shrink 상태일 때 nametag의 크기를 줄임 */
+.nametag.shrink {
+  height: 80px;
+  padding: 15px;
+  gap: 5px;
+  /* 필요에 따라 글자 크기 등 추가 조정 가능 */
 }
 
 .main {
@@ -106,6 +122,11 @@
 }
 
 @media (max-width: 600px) {
+  .page {
+    width: 100vw;
+    left: 0;
+    transform: none;
+  }
   .main {
     padding: 20px;
   }

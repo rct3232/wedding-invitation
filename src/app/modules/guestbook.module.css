@@ -36,4 +36,6 @@ input.guestbook {
   display: block;
   margin: 20px auto;
   cursor: pointer;
+  background-color: transparent !important;
+  -webkit-appearance: none;
 }
