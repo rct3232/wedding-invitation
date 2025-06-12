@@ -17,11 +17,13 @@ export default function Greeting({ greeting, relation }) {
       const idx = parseInt(key, 10);
       widths[idx] = parentCells.current[idx];
       sumParentWidth += parentCells.current[idx];
+      console.log(parentCells.current[idx])
       parentLength++;
     });
     setMaxParentWidths(widths);
 
     for (let i = 1; i < parentLength+1; i++) sumParentWidth += 14;
+    console.log(sumParentWidth);
     setTotalParentWidth(sumParentWidth);
   }, [relation]);
 

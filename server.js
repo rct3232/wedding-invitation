@@ -63,25 +63,46 @@ app.prepare().then(() => {
       resultData.place = jsonData.place;
 
       // account 배열 생성
-      resultData.account = jsonData.person.map(p => ({
-        color: p.color,
-        // content 배열는 먼저 자신의 account 정보를 넣고, 이후 부모의 정보를 추가합니다.
-        content: [
-          {
-            title: p.title,
-            name: p.name.last + p.name.first,
-            bank: p.bank.name,
-            account: p.bank.account
-          },
-          // 부모 정보 배열 추가 (부모가 여러 개이면 모두 포함)
-          ...p.parent.map(par => ({
-            title: par.title,
-            name: par.name,
-            bank: par.bank.name,
-            account: par.bank.account
-          }))
-        ]
-      }));
+      resultData.account = jsonData.person.map(p => {
+        const personalAccount = p.bank.kakao
+          ? {
+              title: p.title,
+              name: p.name.last + p.name.first,
+              bank: p.bank.name,
+              account: p.bank.account,
+              kakao: p.bank.kakao
+            }
+          : {
+              title: p.title,
+              name: p.name.last + p.name.first,
+              bank: p.bank.name,
+              account: p.bank.account
+            };
+
+        // 부모 계좌 정보 및 각 부모의 kakao 정보 추가 (flatMap을 통해 배열 평탄화)
+        const parentAccounts = p.parent.flatMap(par => {
+          const parentAccount = par.bank.kakao
+            ? {
+                title: par.title,
+                name: par.name,
+                bank: par.bank.name,
+                account: par.bank.account,
+                kakao: par.bank.kakao
+              }
+            : {
+                title: par.title,
+                name: par.name,
+                bank: par.bank.name,
+                account: par.bank.account
+              };
+          return [parentAccount];
+        });
+
+        return {
+          color: p.color,
+          content: [personalAccount, ...parentAccounts]
+        };
+      });
 
       resultData.galleryImage = {
         fullImages: fileList,

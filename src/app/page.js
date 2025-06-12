@@ -16,8 +16,6 @@ export const dynamic = "force-dynamic";
 const dayOfWeek = ["일", "월", "화", "수", "목", "금", "토"];
 const clientId = process.env.NEXT_PUBLIC_MAP_CLIENT;
 
-console.log(clientId);
-
 export default function Home() {
   const [data, setData] = useState(null);
   const [query, setQuery] = useState("default");
@@ -47,6 +45,7 @@ export default function Home() {
           header: result.headerImage,
         };
         tmpData.content.date = new Date(result.data.content.date);
+        console.log(tmpData);
         setData(tmpData);
       })
       .catch((error) => {
