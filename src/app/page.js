@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import styles from "./page.module.css";
 
@@ -74,11 +74,28 @@ export default function Home() {
       });
   }, []);
 
-  if (!data) return (
-    <div className={styles.loaderWrapper}>
-      <div className={styles.loader}></div>
-    </div>
-  );
+  const handleScroll = () => {
+    if (containerRef.current) {
+      const scrollTop = containerRef.current.scrollTop;
+      const baseThreshold = window.innerWidth <= 600 ? (window.innerHeight - 146) : 525;
+      const margin = 60;
+      const shrinkThreshold = baseThreshold;
+      const releaseThreshold = baseThreshold - margin;
+  
+      if (!isShrink && scrollTop >= shrinkThreshold) {
+        setIsShrink(true);
+      } else if (isShrink && scrollTop <= releaseThreshold) {
+        setIsShrink(false);
+      }
+    }
+  };
+
+  if (!data)
+    return (
+      <div className={styles.loaderWrapper}>
+        <div className={styles.loader}></div>
+      </div>
+    );
 
   return (
     <div>
@@ -90,7 +107,7 @@ export default function Home() {
           objectFit="cover"
           objectPosition="center"
         />
-        <div className={styles.container}>
+        <div className={styles.container} ref={containerRef} onScroll={handleScroll}>
           <div className={styles.headercover} />
           <div className={`${styles.nametag} ${isShrink ? styles.shrink : ""}`}>
             <div className={styles.title}>
