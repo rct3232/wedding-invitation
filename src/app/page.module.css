@@ -1,8 +1,9 @@
+
 .loaderWrapper {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh; /* 화면 전체를 중앙 정렬 */
+  height: 100vh;
   background-color: #f8f8f8;
 }
 
@@ -32,15 +33,14 @@
   height: 100svh;
   overflow-y: auto;
   
-  -ms-overflow-style: none; /* 인터넷 익스플로러 */
-  scrollbar-width: none; /* 파이어폭스 */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .container:-webkit-scrollbar {
   display: none;
 }
 
-/* 나머지 스타일은 그대로 유지 */
 .headercover {
   flex-shrink: 0;
   height: 525px;
@@ -59,14 +59,24 @@
   background-color: #FAFAFA;
   opacity: 80%;
   z-index: 200;
+  transition: all 0.3s ease;
 }
 
-/* shrink 상태일 때 nametag의 크기를 줄임 */
 .nametag.shrink {
   height: 80px;
   padding: 15px;
   gap: 5px;
-  /* 필요에 따라 글자 크기 등 추가 조정 가능 */
+}
+
+.nametag .title,
+.nametag .detail {
+  width: 100%;
+  text-align: center;
+  transition: transform 0.3s ease, text-align 0.3s ease;
+}
+
+.nametag.shrink .detail {
+  visibility: hidden;
 }
 
 .main {

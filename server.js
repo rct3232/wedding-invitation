@@ -5,7 +5,9 @@ const next = require('next');
 const fs = require('fs').promises;
 const path = require('path');
 
-const port = process.env.PORT || 3000;
+require('dotenv').config();
+
+const port = process.env.PORT || 3100;
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
