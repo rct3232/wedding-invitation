@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import styles from './guestbook.module.css';
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer, toast, Slide } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const Guestbook = ({ query }) => {
@@ -27,7 +27,7 @@ const Guestbook = ({ query }) => {
       if (response.ok) {
         setMessage('');
         setName('');
-        toast.success('방명록 작성이 성공적으로 저장되었습니다.');
+        toast.info('방명록 작성이 성공적으로 저장되었습니다.');
       } else {
         alert('방명록 전송에 실패했습니다.');
       }
@@ -60,7 +60,20 @@ const Guestbook = ({ query }) => {
           등록
         </button>
       </form>
-      <ToastContainer />
+      <ToastContainer
+        position="top-center"
+        autoClose={2000}
+        limit={1}
+        hideProgressBar
+        newestOnTop={false}
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        transition={Slide}
+      />
     </div>
   );
 };

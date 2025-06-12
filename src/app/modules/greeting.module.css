@@ -1,0 +1,29 @@
+@import url('https://hangeul.pstatic.net/hangeul_static/css/NanumHanYunCe.css');
+
+.greeting {
+  font-size: 20px;
+  text-align: center;
+  line-height: 2;
+  white-space: pre-wrap;
+  font-family: 'NanumHanYunCe';
+}
+
+.relation {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.content {
+  display: grid;
+  column-gap: 16px;
+  font-size: 14px;
+  align-items: center;
+}
+
+.detail {
+  display: grid;
+  /* grid-template-columns는 greeting.js에서 inline style로 생성 */
+  column-gap: 4px;
+}

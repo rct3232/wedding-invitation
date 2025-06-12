@@ -45,7 +45,7 @@
   },
   "account": [
     {"color": "#A5B8D0", "content": [
-      {"title": "신랑", "name": "김철수", "bank": "가나다", "account": "1234-5678-9123"},
+      {"title": "신랑", "name": "김철수", "bank": "가나다", "account": "1234-5678-9123", "kakao": "https://link.kakaopay.com/_/ow4AX4t"},
       {"title": "아버지", "name": "김길동", "bank": "가나다", "account": "1234-5678-9123"},
       {"title": "어머니", "name": "이길순", "bank": "가나다", "account": "1234-5678-9123"}]
     },

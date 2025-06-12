@@ -9,11 +9,15 @@ const GalleryGrid = ({ thumbImages, onImageClick }) => (
         className={styles.galleryPhoto}
         onClick={() => onImageClick(i)}
       >
-        <img 
-          src={`data:image/jpeg;base64,${img.content}`} 
-          alt={`Image ${i + 1}`} 
-          loading="lazy" 
-        />
+        {img ? (
+          <img
+            src={`data:image/jpeg;base64,${img.content}`}
+            alt={`Image ${i + 1}`}
+            loading="lazy"
+          />
+        ) : (
+          <div className={styles.placeholder}></div>
+        )}
       </div>
     ))}
   </div>

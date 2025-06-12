@@ -1,57 +1,79 @@
 .bankAccount {
-    padding: 10px;
-    margin: 10px 0;
-  }
-  
-  .banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #ccc;
-    cursor: pointer;
-  }
-  
-  /* 내용 영역 */
-  .body {
-    padding-top: 10px;
-  }
-  
-  .row {
-    display: grid;
-    grid-template-columns: minmax(84px, 1fr) auto 12px;
-    align-items: center;
-    column-gap: 4px;
-    margin-bottom: 8px;
-  }
+  padding: 10px;
+  margin: 10px 0;
+}
 
-  .name {
-    display: grid;
-    grid-template-columns: 36px auto;
-    column-gap: 4px;
-    align-items: center;
-  }
-  
-  .data {
-    text-align: right;
-    font-size: 16px;
-  }
-  
-  .iconAccordion {
-    width: 12px;
-    height: 12px;
-    background-image: url("/accordion.png");
-    background-size: contain;
-    background-position: center;
-    flex-shrink: 0;
-  }
-  
-  .iconCopy {
-    width: 12px;
-    height: 12px;
-    background-image: url("/copy.png");
-    background-size: contain;
-    background-position: center;
-    flex-shrink: 0;
-    cursor: pointer;
-  }
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.little {
+  font-size: 16px;
+}
+
+/* 내용 영역 */
+.body {
+  padding-top: 10px;
+}
+
+/* 각 항목(item) 컨테이너 */
+.item {
+  margin-bottom: 12px;
+}
+
+/* rowFlex : 텍스트와 버튼 영역을 좌우로 분리하여 수평 정렬 */
+.rowFlex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 왼쪽 텍스트 영역: 두 줄의 정보를 포함 */
+.textContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+  font-size: 16px;
+}
+
+/* 오른쪽 버튼 컨테이너: 버튼들을 가로로 배열하며, 세로 중앙 정렬 */
+.buttonContainer {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+/* 복사 버튼: 기존보다 크게 24px로 지정하여 클릭하기 편하게 함 */
+.copyButton {
+  width: 24px;
+  height: 24px;
+  background-image: url("/copy.png");
+  background-size: contain;
+  background-position: center;
+  cursor: pointer;
+}
+
+.kakaobankButton {
+  width: 24px;
+  height: 24px;
+  background-image: url("/kakaotalk.png");
+  background-size: contain;
+  background-position: center;
+  cursor: pointer;
+}
+
+/* 아코디언 토글 아이콘 */
+.iconAccordion {
+  width: 12px;
+  height: 12px;
+  background-image: url("/accordion.png");
+  background-size: contain;
+  background-position: center;
+  cursor: pointer;
+}
