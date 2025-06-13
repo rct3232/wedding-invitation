@@ -19,11 +19,11 @@
   border: none !important;
 }
 
-/* 하이라이트된 날짜를 동그라미 테두리로 표시 */
+/* 하이라이트된 날짜를 원 모양으로 표시 (높이와 너비를 같게) */
 .react-calendar .highlight {
   background-color: #d9c8bd !important;
-  border: 1px solid #d9c8bd !important; /* 원하는 색상으로 변경 가능 */
-  border-radius: 50%;
+  border: 1px solid #d9c8bd !important;
+  border-radius: 20%;
 }
 
 /* 이전 버튼과 다음 버튼만 숨기기 */
