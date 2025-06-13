@@ -8,7 +8,6 @@ const SplashOverlay = ({ data }) => {
   const [splashVisible, setSplashVisible] = useState(true);
 
   useEffect(() => {
-    // 4초 후 fade out, 5초 후 완전 제거
     const timer1 = setTimeout(() => {
       setSplashVisible(false);
     }, 4500);
@@ -30,7 +29,7 @@ const SplashOverlay = ({ data }) => {
         {data.person[0].name.kor.last}{data.person[0].name.kor.first} 💛 {data.person[1].name.kor.last}{data.person[1].name.kor.first}
       </div>
       <div className={`${styles["splash-text"]} ${styles.line2}`}>
-        we're getting married
+        {data.content.splashText}
       </div>
     </div>
   );

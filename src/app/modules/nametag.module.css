@@ -43,7 +43,7 @@
 }
 
 .title,
-.detail {
+.little {
   width: 100%;
   text-align: center;
   transition: transform 0.3s ease, text-align 0.3s ease, font-size 0.3s ease;
