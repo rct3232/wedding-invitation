@@ -68,7 +68,6 @@ export default function Home() {
           <Nametag data={data} isShrink={isShrink} isGradientActive={isGradientActive} />
           <div className={styles.headercover} />
           <main className={styles.main}>
-            <div style={{ height: "66px" }} />
             <div className={styles.divider} />
             <Greeting greeting={data.content.greeting} relation={data.relation} />
             <div className={styles.divider} />
