@@ -109,7 +109,7 @@
   top: 0;
   height: 146px;
   gap: 15px;
-  padding: 30px;
+  padding: 15px 0px;
   /* 기본 배경은 투명 */
   background-color: rgba(250, 250, 250, 0);
   z-index: 200;
@@ -143,7 +143,7 @@
 
 .nametag.shrink {
   height: 80px;
-  padding: 15px;
+  padding: 10px 0px;
   gap: 5px;
 }
 
@@ -198,7 +198,7 @@
 }
 
 .title {
-  font-size: clamp(40px, 12svw, 60px);
+  font-size: clamp(40px, 12svw, 55px);
 }
 
 .header {

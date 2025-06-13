@@ -32,10 +32,10 @@ export default function Home() {
     // splash 애니메이션: 3초 후(splashVisible=false) fade out, 4초 후 오버레이 제거
     const timer1 = setTimeout(() => {
       setSplashVisible(false);
-    }, 3000);
+    }, 4000);
     const timer2 = setTimeout(() => {
       setShowSplash(false);
-    }, 4000);
+    }, 5000);
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
