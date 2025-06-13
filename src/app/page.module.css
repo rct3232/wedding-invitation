@@ -3,14 +3,14 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #f8f8f8;
+  background: linear-gradient(to bottom, #d9c8bd 0%, #f4f4f4 50%, #f4f4f4 100%);
 }
 
 .loader {
   width: 50px;
   height: 50px;
   border: 5px solid #ddd;
-  border-top: 5px solid #D9D4CF;
+  border-top: 5px solid #d9d4cf;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -24,57 +24,12 @@
   }
 }
 
-/* Splash 오버레이 스타일 */
-.splash {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: linear-gradient(
-    to bottom,
-    #D9C8BD 0%,
-    #F4F4F4 50%,
-    #F4F4F4 100%
-  );
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  opacity: 1;
-  transition: opacity 1s ease-out;
-}
-
-.splash.hide {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.splash-text {
-  font-size: 1.5rem;
-  opacity: 0;
-  animation: fadeIn 1s forwards;
-}
-
-.splash-text.line2 {
-  font-size: 1rem;
-  animation-delay: 1.5s;
-}
-
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-  }
-}
-
 .page {
   position: absolute;
   min-height: 100svh;
   width: 400px;
   left: 50%;
-  top: 0%;
+  top: 0;
   transform: translate(-50%);
 }
 
@@ -85,85 +40,17 @@
   width: 100%;
   height: 100svh;
   overflow-y: auto;
-  
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-.container:-webkit-scrollbar {
+.container::-webkit-scrollbar {
   display: none;
 }
 
 .headercover {
   flex-shrink: 0;
   height: 525px;
-}
-
-/* sticky 상태를 유지하면서 배경 그라데이션을 위한 pseudo-element 적용 */
-.nametag {
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  height: 146px;
-  gap: 15px;
-  padding: 15px 0px;
-  /* 기본 배경은 투명 */
-  background-color: rgba(250, 250, 250, 0);
-  z-index: 200;
-  transition: all 0.3s ease;
-}
-
-/* ::after를 이용하여 그라데이션 효과 적용 – 기본은 숨김 */
-.nametag::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-  opacity: 0;
-  z-index: -1;
-}
-
-/* .nametag.gradientActive 클래스가 적용되면 gradient가 보임 */
-.nametag.gradientActive::after {
-  background: linear-gradient(
-    to bottom,
-    rgba(250, 250, 250, 1) 0%,
-    rgba(250, 250, 250, 0.8) 50%,
-    rgba(250, 250, 250, 0) 100%
-  );
-  opacity: 1;
-}
-
-.nametag.shrink {
-  height: 80px;
-  padding: 10px 0px;
-  gap: 5px;
-}
-
-.nametag .title,
-.nametag .detail {
-  width: 100%;
-  text-align: center;
-  transition: transform 0.3s ease, text-align 0.3s ease, font-size 0.3s ease;
-}
-
-.nametag .title {
-  font-family: "Cherolina";
-}
-
-.nametag.shrink .title {
-  font-size: clamp(20px, 6svw, 30px);
-}
-
-.nametag.shrink .detail {
-  visibility: hidden;
 }
 
 .main {
@@ -183,41 +70,12 @@
   background-color: var(--foreground);
 }
 
-.content {
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  gap: 10px;
-}
-
-.detail {
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  gap: 5px;
-}
-
-.title {
-  font-size: clamp(40px, 12svw, 55px);
-}
-
-.header {
-  font-size: 14px;
-}
-
-.body {
-  font-size: 14px;
-}
-
-.little {
-  font-size: 12px;
-}
-
 .footer {
   background-color: var(--foreground);
   padding: 2px;
 }
 
+/* Responsive Styles */
 @media (max-width: 600px) {
   .page {
     width: 100vw;

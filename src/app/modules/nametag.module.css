@@ -1,0 +1,70 @@
+.nametag {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  height: 146px;
+  gap: 15px;
+  padding: 15px 0;
+  background-color: rgba(250, 250, 250, 0);
+  z-index: 200;
+  transition: all 0.3s ease;
+}
+
+.nametag::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  opacity: 0;
+  z-index: -1;
+}
+
+.gradientActive::after {
+  background: linear-gradient(
+    to bottom,
+    rgba(250, 250, 250, 1) 0%,
+    rgba(250, 250, 250, 0.8) 50%,
+    rgba(250, 250, 250, 0) 100%
+  );
+  opacity: 1;
+}
+
+.shrink {
+  height: 80px;
+  padding: 10px 0;
+  gap: 5px;
+}
+
+.title,
+.detail {
+  width: 100%;
+  text-align: center;
+  transition: transform 0.3s ease, text-align 0.3s ease, font-size 0.3s ease;
+}
+
+.title {
+  font-size: clamp(40px, 12svw, 55px);
+  font-family: "Cherolina";
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 5px;
+}
+
+.shrink .title {
+  font-size: clamp(20px, 6svw, 30px);
+}
+
+.shrink .detail {
+  visibility: hidden;
+}
