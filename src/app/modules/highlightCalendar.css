@@ -10,6 +10,7 @@
   box-shadow: none !important;
 
   width: 100%;
+  pointer-events: none;
 }
 
 /* 각 날짜 타일의 기본 배경과 테두리 제거 */
@@ -21,6 +22,11 @@
 /* 하이라이트된 날짜를 동그라미 테두리로 표시 */
 .react-calendar .highlight {
   background-color: #d9c8bd !important;
-  border: 2px solid #d9c8bd !important; /* 원하는 색상으로 변경 가능 */
+  border: 1px solid #d9c8bd !important; /* 원하는 색상으로 변경 가능 */
   border-radius: 50%;
+}
+
+/* 이전 버튼과 다음 버튼만 숨기기 */
+.react-calendar__navigation__arrow {
+  display: none !important;
 }
