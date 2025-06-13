@@ -9,6 +9,7 @@ import HeaderImage from "./modules/headerImage";
 import Nametag from "./modules/nametag";
 import Greeting from "./modules/greeting";
 import DateCounter from "./modules/dateCounter";
+import HighlightCalendar from "./modules/highlightCalendar";
 import Gallery from "./modules/gallery/gallery";
 import Route from "./modules/route";
 import BankAccountAccordion from "./modules/bankAccountAccordion";
@@ -72,6 +73,7 @@ export default function Home() {
             <Greeting greeting={data.content.greeting} relation={data.relation} />
             <div className={styles.divider} />
             <DateCounter date={data.content.date} />
+            <HighlightCalendar selectedDate={data.content.date} />
             <Gallery fullImages={data.galleryImage.fullImages} thumbImages={data.images} query={query} />
             <div className={styles.divider} />
             <Route placeInfo={data.place}/>
