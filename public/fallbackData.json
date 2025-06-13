@@ -1,7 +1,7 @@
 {
   "person": [
-    { "name": { "first": "철수", "last": "김" }, "color": "#A5B8D0" },
-    { "name": { "first": "영희", "last": "이" }, "color": "#D4A19C" }
+    { "name": { "kor": {"first": "철수", "last": "김"}, "eng": {"first": "Cheolsu", "last": "Kim"} }, "color": "#A5B8D0" },
+    { "name": { "kor": {"first": "영희", "last": "이"}, "eng": {"first": "Younghee", "last": "Lee"} }, "color": "#D4A19C" }
   ],
   "relation": [
     {

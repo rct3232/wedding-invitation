@@ -1,5 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic&display=swap');
 @import url('https://hangeul.pstatic.net/hangeul_static/css/maru-buri.css');
+@import url('https://hangeul.pstatic.net/hangeul_static/css/NanumHanYunCe.css');
+
+@font-face {
+  font-family: "Cherolina";
+  src: url("/fonts/Cherolina.ttf") format("truetype");
+  font-weight: normal;
+}
 
 :root {
   --background: #F4F4F4;

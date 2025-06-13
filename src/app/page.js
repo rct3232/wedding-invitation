@@ -20,8 +20,27 @@ export default function Home() {
   const [data, setData] = useState(null);
   const [query, setQuery] = useState("default");
   const [isShrink, setIsShrink] = useState(false);
+  const [isGradientActive, setIsGradientActive] = useState(false);
+  
+  // splash 오버레이 제어를 위한 상태들
+  const [showSplash, setShowSplash] = useState(true);
+  const [splashVisible, setSplashVisible] = useState(true);
 
   const containerRef = useRef(null);
+
+  useEffect(() => {
+    // splash 애니메이션: 3초 후(splashVisible=false) fade out, 4초 후 오버레이 제거
+    const timer1 = setTimeout(() => {
+      setSplashVisible(false);
+    }, 3000);
+    const timer2 = setTimeout(() => {
+      setShowSplash(false);
+    }, 4000);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
 
   useEffect(() => {
     const segments = window.location.pathname.split("/").filter(Boolean);
@@ -60,11 +79,11 @@ export default function Home() {
           })
           .then((fallbackData) => {
             fallbackData.content.date = new Date(fallbackData.content.date);
-            
             fallbackData.header = fallbackData.header || "";
-            fallbackData.galleryImage = fallbackData.galleryImage || { fullImages: [], thumbImages: [] };
-              
-            fallbackData.images = fallbackData.images || fallbackData.galleryImage.thumbImages || [];
+            fallbackData.galleryImage =
+              fallbackData.galleryImage || { fullImages: [], thumbImages: [] };
+            fallbackData.images =
+              fallbackData.images || fallbackData.galleryImage.thumbImages || [];
             setData(fallbackData);
           })
           .catch((fallbackError) => {
@@ -77,7 +96,7 @@ export default function Home() {
     if (containerRef.current) {
       const scrollTop = containerRef.current.scrollTop;
       const baseThreshold = window.innerWidth <= 600 ? (window.innerHeight - 146) : 525;
-      const margin = 60;
+      const margin = 66;
       const shrinkThreshold = baseThreshold;
       const releaseThreshold = baseThreshold - margin;
   
@@ -85,6 +104,13 @@ export default function Home() {
         setIsShrink(true);
       } else if (isShrink && scrollTop <= releaseThreshold) {
         setIsShrink(false);
+      }
+  
+      const gradientThreshold = window.innerWidth <= 600 ? (window.innerHeight - 200) : 600;
+      if (!isGradientActive && scrollTop >= gradientThreshold) {
+        setIsGradientActive(true);
+      } else if (isGradientActive && scrollTop < gradientThreshold) {
+        setIsGradientActive(false);
       }
     }
   };
@@ -98,6 +124,15 @@ export default function Home() {
 
   return (
     <div>
+      {/* Splash 오버레이 */}
+      {showSplash && (
+        <div className={`${styles.splash} ${!splashVisible ? styles.hide : ""}`}>
+          <div className={styles["splash-text"]}>
+            {data.person[0].name.kor.last}{data.person[0].name.kor.first} 💛 {data.person[1].name.kor.last}{data.person[1].name.kor.first}
+          </div>
+          <div className={`${styles["splash-text"]} ${styles.line2}`}>we&apos;re getting married</div>
+        </div>
+      )}
       <div className={styles.page}>
         <Image
           src={`data:image/jpeg;base64,${data.header}`}
@@ -107,10 +142,9 @@ export default function Home() {
           objectPosition="center"
         />
         <div className={styles.container} ref={containerRef} onScroll={handleScroll}>
-          <div className={styles.headercover} />
-          <div className={`${styles.nametag} ${isShrink ? styles.shrink : ""}`}>
+          <div className={`${styles.nametag} ${isShrink ? styles.shrink : ""} ${isGradientActive ? styles.gradientActive : ""}`}>
             <div className={styles.title}>
-              {data.person[0].name.first} 💍 {data.person[1].name.first}
+              {data.person[0].name.eng.first} &amp; {data.person[1].name.eng.first}
             </div>
             <div className={styles.detail} style={{ alignItems: "center" }}>
               <div className={styles.little}>
@@ -124,26 +158,21 @@ export default function Home() {
               <div className={styles.little}>{data.place.address.name}</div>
             </div>
           </div>
+          <div className={styles.headercover} />
           <main className={styles.main}>
+            <div style={{ height: "66px" }} />
             <div className={styles.divider} />
-            <Greeting
-              greeting={data.content.greeting}
-              relation={data.relation}
-            />
+            <Greeting greeting={data.content.greeting} relation={data.relation} />
             <div className={styles.divider} />
-
             <div className={styles.content}>
               <DateCounter date={data.content.date} />
             </div>
-
             <Gallery
               fullImages={data.galleryImage.fullImages}
               thumbImages={data.images}
               query={query}
             />
-
             <div className={styles.divider} />
-
             <div className={styles.header}>오시는 길</div>
             <div className={styles.detail}>
               <Map clientId={clientId} mapInfo={data.place.map} />
@@ -157,11 +186,7 @@ export default function Home() {
                   <div className={styles.body}>{route.type}</div>
                   <div className={styles.detail}>
                     {route.content.map((text, idx) => (
-                      <div
-                        key={idx}
-                        className={styles.little}
-                        style={{ whiteSpace: "pre-wrap" }}
-                      >
+                      <div key={idx} className={styles.little} style={{ whiteSpace: "pre-wrap" }}>
                         {text}
                       </div>
                     ))}
@@ -169,20 +194,13 @@ export default function Home() {
                 </React.Fragment>
               ))}
             </div>
-
             <div className={styles.divider} />
             <BankAccountAccordion accountInfo={data.account} />
             <div className={styles.divider} />
             <Guestbook query={query} />
           </main>
           <footer className={styles.footer}>
-            <p
-              style={{
-                color: "white",
-                fontSize: "xx-small",
-                textAlign: "center",
-              }}
-            >
+            <p style={{ color: "white", fontSize: "xx-small", textAlign: "center" }}>
               e-mail: rct3232@gmail.com
             </p>
           </footer>

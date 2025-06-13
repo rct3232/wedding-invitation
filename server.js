@@ -46,7 +46,7 @@ app.prepare().then(() => {
 
       // person 배열 생성
       resultData.person = jsonData.person.map(p => ({
-        name: { first: p.name.first, last: p.name.last },
+        name: p.name,
         color: p.color
       }));
 
@@ -55,7 +55,7 @@ app.prepare().then(() => {
         // 각 person의 parent 배열에서 name 값을 추출합니다.
         parent: p.parent.map(parentObj => parentObj.name),
         title: p.order,
-        name: p.name.last + p.name.first
+        name: p.name.kor.last + p.name.kor.first
       }));
 
       // content와 place는 그대로 복사
@@ -67,14 +67,14 @@ app.prepare().then(() => {
         const personalAccount = p.bank.kakao
           ? {
               title: p.title,
-              name: p.name.last + p.name.first,
+              name: p.name.kor.last + p.name.kor.first,
               bank: p.bank.name,
               account: p.bank.account,
               kakao: p.bank.kakao
             }
           : {
               title: p.title,
-              name: p.name.last + p.name.first,
+              name: p.name.kor.last + p.name.kor.first,
               bank: p.bank.name,
               account: p.bank.account
             };

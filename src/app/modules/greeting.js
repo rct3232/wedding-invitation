@@ -30,7 +30,7 @@ export default function Greeting({ greeting, relation }) {
   const generateDetailGridTemplate = (parentCount) => {
     let cols = [];
     for (let i = 0; i < parentCount; i++) {
-      const width = maxParentWidths[i] ? `${maxParentWidths[i] + 1}px` : "auto";
+      const width = maxParentWidths[i] ? `${maxParentWidths[i] + 2}px` : "auto";
       cols.push(width);
       if (i < parentCount - 1) cols.push("4px");
     }
