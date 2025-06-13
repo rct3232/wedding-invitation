@@ -7,9 +7,9 @@ const clientId = process.env.NEXT_PUBLIC_MAP_CLIENT;
 
 const Route = ({ placeInfo }) => {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px"}}>
+    <div className="detail">
       <div className="header">오시는 길</div>
-      <div className="detail">
+      <div className="list">
         <Map clientId={clientId} mapInfo={placeInfo.map} />
         <div className="little" style={{ marginLeft: "auto" }}>
           {placeInfo.address.address}

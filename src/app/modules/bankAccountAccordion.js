@@ -62,7 +62,8 @@ const BankAccountAccordion = ({ accountInfo }) => {
   };
 
   return (
-    <div>
+    <div className="detail">
+      <div className="header">마음 전하실 곳</div>
       {accountInfo.map((account, aidx) => (
         <div
           key={aidx}
