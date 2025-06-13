@@ -159,7 +159,7 @@
 }
 
 .nametag.shrink .title {
-  font-size: 40px;
+  font-size: clamp(20px, 6svw, 30px);
 }
 
 .nametag.shrink .detail {
