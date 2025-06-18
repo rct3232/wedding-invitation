@@ -19,7 +19,11 @@
     "date": "2099-12-31T12:00:00+0900",
     "greeting": "함께 있을 때 가장 나다운 사람을 만나\n세상의 파도 앞에 나란히 서기로 했습니다\n때로는 흔들리더라도 함께 걷겠습니다\n소중한 시작, 따뜻한 발걸음으로 축복해 주세요",
     "splashText": "we're getting married",
-    "colorInvert": 0
+    "colorInvert": 1,
+    "confetti": {
+      "color": ["#D2691E", "#B22222", "#FF8C00", "#DAA520", "#8B4513"],
+      "shape": "M0,-6 L2,-4 L5,-4 L3,-1 L4,2 L1,1 L0,6 L-1,1 L-4,2 L-3,-1 L-5,-4 L-2,-4 Z"
+    }
   },
   "place": {
     "address": { "name": "가나다 웨딩홀", "address": "강남구 강남대로 999길 999" },

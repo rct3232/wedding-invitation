@@ -30,8 +30,8 @@ app.prepare().then(() => {
 
     // 읽고자 하는 파일과 폴더 경로 설정
     const jsonFilePath = path.join(__dirname, 'data', 'data.json');
-    const folderPath = path.join(__dirname, 'data', 'image', query, 'full');
-    const headerPath = path.join(__dirname, 'data', 'image', query, 'header.jpg');
+    const folderPath = path.join(__dirname, 'data', query, 'full');
+    const headerPath = path.join(__dirname, 'data', query, 'header.jpg');
 
     try {
       // 두 작업을 동시에 실행
@@ -111,7 +111,7 @@ app.prepare().then(() => {
 
       const images = await Promise.all(
         resultData.galleryImage.thumbImages.map(async (fileName) => {
-          const filePath = path.join(__dirname, 'data', 'image', query, 'thumb', fileName);
+          const filePath = path.join(__dirname, 'data', query, 'thumb', fileName);
           const fileBuffer = await fs.readFile(filePath);
           return {
             fileName,
@@ -146,13 +146,37 @@ app.prepare().then(() => {
     }
   });
 
+  server.get('/api/bgm/:query', (req, res) => {
+    let { query } = req.params;
+
+    console.log(`Received request: /api/bgm/${query}`);
+    if (query === 'default') query = 'gy28sep2501';
+
+    const bgmPath = path.join(__dirname, 'data', query, 'bgm.mp3');
+    fs.access(bgmPath)
+      .then(() => {
+        console.log("BGM found");
+
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.sendFile(bgmPath, (err) => {
+          if (err) {
+            console.error(`Error sending BGM file: ${err.message}`);
+            res.status(500).end();
+          } else {
+            console.log("Successfully sent BGM");
+          }
+        });
+      })
+      .catch(() => res.status(404).send('BGM not found'));
+  });
+
   server.get('/api/image/:query/:image', (req, res) => {
     let { query, image } = req.params;
   
     console.log(`Received request: /api/image/${query}/${image}`);
     if (query === "default") query = 'gy28sep2501';
   
-    const imagePath = path.join(__dirname, 'data', 'image', query, 'full', image);
+    const imagePath = path.join(__dirname, 'data', query, 'full', image);
   
     fs.access(imagePath, fs.constants.F_OK)
       .then(() => {

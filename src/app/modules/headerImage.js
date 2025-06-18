@@ -3,7 +3,7 @@ import Image from "next/image";
 const HeaderImage = ({ header }) => {
   return (
     <Image
-      src={`data:image/jpeg;base64,${header}`}
+      src={header}
       alt="Header picture"
       fill
       objectFit="cover"

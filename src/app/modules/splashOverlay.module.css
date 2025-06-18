@@ -31,6 +31,22 @@
   animation: fadeIn 1s 2s forwards;
 }
 
+.startButton {
+  margin-top: 2rem;
+  padding: 0.8rem 1.6rem;
+  font-size: 1rem;
+  color: #fff;
+  background-color: #493628;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.startButton:hover {
+  background-color: #38221f;
+}
+
 @keyframes fadeIn {
   to {
     opacity: 1;

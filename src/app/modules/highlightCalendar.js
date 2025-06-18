@@ -20,8 +20,6 @@ export default function HighlightCalendar({ selectedDate }) {
   const initialDate = selectedDate ? selectedDate : new Date();
   const [value, setValue] = useState(initialDate);
 
-  console.log(value);
-
   // 날짜 타일에 custom 클래스를 추가해 선택한 날짜를 하이라이트
   const tileClassName = ({ date, view }) => {
     if (view === "month" && isSameDay(date, value)) {
