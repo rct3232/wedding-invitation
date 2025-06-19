@@ -59,7 +59,7 @@
   flex-shrink: 0;
   flex-grow: 1;
   gap: 30px;
-  padding: 150px 45px 100px 45px;
+  padding: 150px 45px 20px 45px;
   background: linear-gradient(
     to bottom,
     #f4f4f400 0%,
@@ -89,7 +89,7 @@
     transform: none;
   }
   .main {
-    padding: 150px 20px 100px 20px;
+    padding: 150px 20px 20px 20px;
   }
   .footer {
     padding: 5px;
