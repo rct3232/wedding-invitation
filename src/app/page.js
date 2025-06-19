@@ -31,7 +31,7 @@ export default function Home() {
     if (containerRef.current) {
       const scrollTop = containerRef.current.scrollTop;
       const baseThreshold =
-        window.innerWidth <= 600 ? window.innerHeight - 146 : 525;
+        window.innerWidth <= 600 ? window.innerHeight : 525;
       const margin = 66;
       const shrinkThreshold = baseThreshold;
       const releaseThreshold = baseThreshold - margin;
@@ -43,7 +43,7 @@ export default function Home() {
       }
 
       const gradientThreshold =
-        window.innerWidth <= 600 ? window.innerHeight - 200 : 600;
+        window.innerWidth <= 600 ? window.innerHeight : 525;
       if (!isGradientActive && scrollTop >= gradientThreshold) {
         setIsGradientActive(true);
       } else if (isGradientActive && scrollTop < gradientThreshold) {
