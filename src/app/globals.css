@@ -1,6 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic&display=swap');
-@import url('https://hangeul.pstatic.net/hangeul_static/css/maru-buri.css');
-@import url('https://hangeul.pstatic.net/hangeul_static/css/NanumHanYunCe.css');
+@font-face {
+  font-family: "MaruBuri";
+  src: url("/fonts/MaruBuri-Regular.ttf") format("truetype");
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: "MaruBuriBold";
+  src: url("/fonts/MaruBuri-Bold.ttf") format("truetype");
+  font-weight: bold;
+}
+
+@font-face {
+  font-family: "NanumHanYunCe";
+  src: url("/fonts/NanumHanYunCe.ttf") format("truetype");
+  font-weight: normal;
+}
 
 @font-face {
   font-family: "Cherolina";
