@@ -1,30 +1,28 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import styles from "./greeting.module.css";
 
 export default function Greeting({ greeting, relation }) {
-  // 각 부모 컬럼의 최대 offsetWidth를 저장할 객체 (키는 column 인덱스)
   const parentCells = useRef({});
   const [maxParentWidths, setMaxParentWidths] = useState([]);
   const [totalParentWidth, setTotalParentWidth] = useState("auto");
 
-  // 모든 relation의 부모 요소 측정값을 모아서, 각 컬럼별 최대값을 state에 저장
-  useEffect(() => {
-    // parentCells.current의 키들을 숫자로 변환 후, 정렬하여 배열로 만듦
+  useLayoutEffect(() => {
     const widths = [];
-    let sumParentWidth = 6;
-    let parentLength = 0;
-    Object.keys(parentCells.current).forEach((key) => {
-      const idx = parseInt(key, 10);
-      widths[idx] = parentCells.current[idx];
-      sumParentWidth += parentCells.current[idx];
-      console.log(parentCells.current[idx])
-      parentLength++;
-    });
-    setMaxParentWidths(widths);
+    let sum = 6;
+    let count = 0;
 
-    for (let i = 1; i < parentLength+1; i++) sumParentWidth += 14;
-    console.log(sumParentWidth);
-    setTotalParentWidth(sumParentWidth);
+    Object.entries(parentCells.current).forEach(([key, w]) => {
+      const idx = +key;
+      widths[idx] = w;
+      sum += w;
+      count++;
+    });
+
+    // 컬럼 사이 간격(14px) 더하기
+    sum += count * 14;
+
+    setMaxParentWidths(widths);
+    setTotalParentWidth(sum);
   }, [relation]);
 
   const generateDetailGridTemplate = (parentCount) => {
