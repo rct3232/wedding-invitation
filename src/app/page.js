@@ -24,8 +24,13 @@ export default function Home() {
   const { data, query } = useWeddingData();
   const [isShrink, setIsShrink] = useState(false);
   const [isGradientActive, setIsGradientActive] = useState(false);
+  const [hideBankSection, setHideBankSection] = useState(false);
 
   const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (query.mode == "noAccount") setHideBankSection(true);
+  }, [query])
 
   const handleScroll = () => {
     if (containerRef.current) {
@@ -77,8 +82,12 @@ export default function Home() {
             <Gallery fullImages={data.galleryImage.fullImages} thumbImages={data.images} query={query} />
             <div className={styles.divider} />
             <Route placeInfo={data.place}/>
-            <div className={styles.divider} />
-            <BankAccountAccordion accountInfo={data.account} />
+            {hideBankSection && (
+              <>
+                <div className={styles.divider} />
+                <BankAccountAccordion accountInfo={data.account} />
+              </>
+            )}
             <div className={styles.divider} />
             <Guestbook query={query} />
           </main>
