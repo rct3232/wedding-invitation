@@ -1,0 +1,26 @@
+.mapButtons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;           /* 버튼 사이 간격 */
+  margin-top: 16px;    /* 위쪽 여백 */
+}
+.mapButton {
+  display: block;
+  margin: 0 1rem;
+  width: 36px;
+  height: 36px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: none;
+  border-radius: 30%;
+}
+.mapButton.naver {
+  background-image: url("/navermap.png");
+}
+.mapButton.kakao {
+  background-image: url("/kakaomap.png");
+}
+.mapButton.tmap {
+  background-image: url("/tmap.png");
+}
