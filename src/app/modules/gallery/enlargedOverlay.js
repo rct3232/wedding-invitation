@@ -17,9 +17,7 @@ const EnlargedOverlay = ({
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(0);
   useEffect(() => {
-    if (containerRef.current) {
-      setContainerWidth(containerRef.current.clientWidth);
-    }
+    if (containerRef.current) setContainerWidth(containerRef.current.clientWidth)
   }, []);
 
   const [currentIndex, setCurrentIndex] = useState(index);
@@ -48,9 +46,7 @@ const EnlargedOverlay = ({
 
   useEffect(() => {
     if (thumbRef.current) {
-      const active = thumbRef.current.querySelector(
-        `.${styles.activeThumbnail}`
-      );
+      const active = thumbRef.current.querySelector(`.${styles.activeThumbnail}`);
       if (active) {
         active.scrollIntoView({
           behavior: "smooth",
@@ -62,10 +58,8 @@ const EnlargedOverlay = ({
   }, [currentIndex]);
 
   const [dragOffset, setDragOffset] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [transitionType, setTransitionType] = useState(null); // null, "restore", "switch"
-  const [outgoingX, setOutgoingX] = useState(0);
-  const [incomingX, setIncomingX] = useState(0);
+  const [transitionValue, setTransitionValue] = useState({ isTrans: false, type: null}); // null, "restore", "switch"
+  const [transitionPos, setTransitionPos] = useState({in: 0, out: 0});
 
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
@@ -75,7 +69,7 @@ const EnlargedOverlay = ({
   const threshold = 50;
 
   const handleTouchStart = (e) => {
-    if (isTransitioning) return;
+    if (transitionValue.isTrans) return;
     dragging.current = true;
     swipedRef.current = false;
     touchStartX.current = e.touches[0].clientX;
@@ -84,7 +78,7 @@ const EnlargedOverlay = ({
   };
 
   const handleTouchMove = (e) => {
-    if (!dragging.current || isTransitioning) return;
+    if (!dragging.current || transitionValue.isTrans) return;
     const currentX = e.touches[0].clientX;
     const diffX = currentX - touchStartX.current;
     if (Math.abs(diffX) > 10) {
@@ -94,49 +88,41 @@ const EnlargedOverlay = ({
   };
 
   const handleTouchEnd = (e) => {
-    if (!dragging.current || isTransitioning) return;
+    if (!dragging.current || transitionValue.isTrans) return;
     dragging.current = false;
     const absOffset = Math.abs(dragOffset);
     if (absOffset < threshold) {
-      setTransitionType("restore");
-      setIsTransitioning(true);
+      setTransitionValue({ isTrans: true, type: "restore" });
       setTimeout(() => {
         setDragOffset(0);
       }, 10);
       setTimeout(() => {
-        setIsTransitioning(false);
-        setTransitionType(null);
+        setTransitionValue({ isTrans: false, type: null });
       }, 300);
+      onClose();
     } else {
       const direction = dragOffset < 0 ? "next" : "prev";
       let newIndex = currentIndex + (direction === "next" ? 1 : -1);
       if (newIndex < 0 || newIndex >= fullImages.length) {
-        setTransitionType("restore");
-        setIsTransitioning(true);
+        setTransitionValue({ isTrans: true, type: "restore" });
         setTimeout(() => {
           setDragOffset(0);
         }, 10);
         setTimeout(() => {
-          setIsTransitioning(false);
-          setTransitionType(null);
+          setTransitionValue({ isTrans: false, type: null });
         }, 300);
         return;
       }
-      setTransitionType("switch");
-      setIsTransitioning(true);
-      setOutgoingX(dragOffset);
-      setIncomingX(direction === "next" ? containerWidth : -containerWidth);
+      setTransitionValue({ isTrans: true, type: "switch" });
+      setTransitionPos({ in: direction === "next" ? containerWidth : -containerWidth, out: dragOffset });
       setTimeout(() => {
-        setOutgoingX(direction === "next" ? -containerWidth : containerWidth);
-        setIncomingX(0);
+        setTransitionPos({ in: 0, out: direction === "next" ? -containerWidth : containerWidth });
       }, 10);
       setTimeout(() => {
         setCurrentIndex(newIndex);
         setDragOffset(0);
-        setIsTransitioning(false);
-        setTransitionType(null);
-        setOutgoingX(0);
-        setIncomingX(0);
+        setTransitionValue({ isTrans: false, type: null });
+        setTransitionPos({ in: 0, out: 0 })
         if (direction === "next" && onNext) onNext();
         if (direction === "prev" && onPrev) onPrev();
       }, 310);
@@ -153,25 +139,20 @@ const EnlargedOverlay = ({
 
   const handlePrev = (e) => {
     e.stopPropagation();
-    if (isTransitioning) return;
+    if (transitionValue.isTrans) return;
     setDragOffset(containerWidth);
     setTimeout(() => {
-      setTransitionType("switch");
-      setIsTransitioning(true);
-      setOutgoingX(containerWidth);
-      setIncomingX(-containerWidth);
+      setTransitionValue({ isTrans: true, type: "switch" });
+      setTransitionPos({ in: -containerWidth, out: containerWidth });
       setTimeout(() => {
-        setOutgoingX(containerWidth);
-        setIncomingX(0);
+        setTransitionPos({ in: 0, out: containerWidth });
       }, 10);
       setTimeout(() => {
         const newIndex = currentIndex - 1;
         setCurrentIndex(newIndex);
         setDragOffset(0);
-        setIsTransitioning(false);
-        setTransitionType(null);
-        setOutgoingX(0);
-        setIncomingX(0);
+        setTransitionValue({ isTrans: false, type: null });
+        setTransitionPos({ in: 0, out: 0 });
         if (onPrev) onPrev();
       }, 310);
     }, 0);
@@ -179,32 +160,27 @@ const EnlargedOverlay = ({
 
   const handleNext = (e) => {
     e.stopPropagation();
-    if (isTransitioning) return;
+    if (transitionValue.isTrans) return;
     setDragOffset(-containerWidth);
     setTimeout(() => {
-      setTransitionType("switch");
-      setIsTransitioning(true);
-      setOutgoingX(-containerWidth);
-      setIncomingX(containerWidth);
+      setTransitionValue({ isTrans: true, type: "switch" });
+      setTransitionPos({ in: containerWidth, out: -containerWidth })
       setTimeout(() => {
-        setOutgoingX(-containerWidth);
-        setIncomingX(0);
+        setTransitionPos({ in: 0, out: -containerWidth });
       }, 10);
       setTimeout(() => {
         const newIndex = currentIndex + 1;
         setCurrentIndex(newIndex);
         setDragOffset(0);
-        setIsTransitioning(false);
-        setTransitionType(null);
-        setOutgoingX(0);
-        setIncomingX(0);
+        setTransitionValue({ isTrans: false, type: null });
+        setTransitionPos({ in: 0, out: 0 });
         if (onNext) onNext();
       }, 310);
     }, 0);
   };
 
   let renderedContent;
-  if (transitionType === "switch") {
+  if (transitionValue.type === "switch") {
     const direction = dragOffset < 0 ? "next" : "prev";
     const newIndex = currentIndex + (direction === "next" ? 1 : -1);
     const outgoingSrc = imageCache[fullImages[currentIndex]] || "";
@@ -213,35 +189,24 @@ const EnlargedOverlay = ({
       <div
         className={styles.enlargedContainer}
         onClick={(e) => e.stopPropagation()}
-        style={{ position: "relative", overflow: "hidden" }}
       >
         <img
+          className={styles.largeImage}
           src={outgoingSrc}
           alt={`Image ${currentIndex + 1}`}
           loading="lazy"
           style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",
-            transform: `translateX(${outgoingX}px)`,
+            transform: `translateX(${transitionPos.out}px)`,
             transition: "transform 300ms ease",
           }}
         />
         <img
+          className={styles.largeImage}
           src={incomingSrc}
           alt={`Image ${newIndex + 1}`}
           loading="lazy"
           style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",
-            transform: `translateX(${incomingX}px)`,
+            transform: `translateX(${transitionPos.in}px)`,
             transition: "transform 300ms ease",
           }}
         />
@@ -256,27 +221,18 @@ const EnlargedOverlay = ({
       <div
         className={styles.enlargedContainer}
         onClick={(e) => e.stopPropagation()}
-        style={{ position: "relative", overflow: "hidden" }}
       >
         <img
+          className={styles.largeImage}
           src={currentSrc}
           alt={`Image ${currentIndex + 1}`}
           loading="lazy"
-          onLoad={() =>
-            setImageLoaded((prev) => ({
-              ...prev,
-              [fullImages[currentIndex]]: true,
-            }))
-          }
+          onLoad={() => setImageLoaded((prev) => ({ ...prev, [fullImages[currentIndex]]: true }))}
           style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",
             transform: `translateX(${dragOffset}px)`,
-            transition:
-              isTransitioning && transitionType === "restore"
-                ? "transform 300ms ease"
-                : "none",
+            transition: transitionValue.isTrans && transitionValue.type === "restore"
+              ? "transform 300ms ease"
+              : "none",
             visibility: imageLoaded[fullImages[currentIndex]]
               ? "visible"
               : "hidden",
@@ -290,17 +246,17 @@ const EnlargedOverlay = ({
   }
 
   return (
-    <div className={styles.overlay}>
+    <div className={styles.overlay} onClick={handleClick}>
       <div
         className={styles.content}
         ref={containerRef}
+        onClick={handleClick}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onClick={handleClick}
       >
         {renderedContent}
-        {currentIndex > 0 && !isTransitioning && (
+        {currentIndex > 0 && !transitionValue.isTrans && (
           <button
             className={styles.prev}
             onClick={(e) => {
@@ -309,12 +265,11 @@ const EnlargedOverlay = ({
             }}
             onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
-            style={{ paddingTop: "20px", paddingBottom: "20px", minWidth: "50px" }}
           >
             {"<"}
           </button>
         )}
-        {currentIndex < fullImages.length - 1 && !isTransitioning && (
+        {currentIndex < fullImages.length - 1 && !transitionValue.isTrans && (
           <button
             className={styles.next}
             onClick={(e) => {
@@ -323,7 +278,6 @@ const EnlargedOverlay = ({
             }}
             onTouchStart={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
-            style={{ paddingTop: "20px", paddingBottom: "20px", minWidth: "50px" }}
           >
             {">"}
           </button>
@@ -336,9 +290,7 @@ const EnlargedOverlay = ({
           {thumbImages.map((img, i) => (
             <div
               key={i}
-              className={`${styles.thumbnail} ${
-                i === currentIndex ? styles.activeThumbnail : ""
-              }`}
+              className={`${styles.thumbnail} ${i === currentIndex ? styles.activeThumbnail : ""}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onSelect(i);
