@@ -10,7 +10,7 @@ export const metadata = {
     type: "website",
     images: [
       {
-        url: "https://invitation.plume7eat.xyz/header.png",
+        url: "https://invitation.plume7eat.xyz/header.jpg",
         width: 1200,
         height: 630,
         alt: "모바일 청첩장",
