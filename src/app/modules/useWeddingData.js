@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-export default function useWeddingData() {
+const useWeddingData = () => {
   const [data, setData] = useState(null);
   const [query, setQuery] = useState("default");
   const [params, setParams] = useState(null);
@@ -62,3 +62,5 @@ export default function useWeddingData() {
 
   return { data, query, params };
 }
+
+export default useWeddingData;

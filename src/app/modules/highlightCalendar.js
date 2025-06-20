@@ -7,7 +7,7 @@ import "react-calendar/dist/Calendar.css";
 import "./highlightCalendar.css";
 
 // 두 날짜가 같은 날인지 비교하는 함수
-function isSameDay(a, b) {
+const isSameDay = (a, b) => {
   return (
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
@@ -15,7 +15,7 @@ function isSameDay(a, b) {
   );
 }
 
-export default function HighlightCalendar({ selectedDate }) {
+const HighlightCalendar = ({ selectedDate }) => {
   // selectedDate가 전달되지 않으면 오늘 날짜를 기본값으로 사용
   const initialDate = selectedDate ? selectedDate : new Date();
   const [value, setValue] = useState(initialDate);
@@ -38,3 +38,5 @@ export default function HighlightCalendar({ selectedDate }) {
     </div>
   );
 }
+
+export default HighlightCalendar;

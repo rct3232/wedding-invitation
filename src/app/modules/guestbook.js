@@ -5,7 +5,7 @@ import styles from './guestbook.module.css'
 import { ToastContainer, toast, Slide } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
-export default function Guestbook({ query }) {
+const Guestbook = ({ query }) => {
   const [inputMessage, setInputMessage] = useState('')
   const [inputName, setInputName]       = useState('')
   const [entries, setEntries]   = useState([])
@@ -150,3 +150,5 @@ export default function Guestbook({ query }) {
     </div>
   )
 }
+
+export default Guestbook;

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import styles from "./bgmPlayer.module.css";
 
-export default function BgmPlayer({ bgmUrl }) {
+const BgmPlayer = ({ bgmUrl }) => {
   const audioRef = useRef(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isReady, setIsReady] = useState(false);
@@ -66,3 +66,5 @@ export default function BgmPlayer({ bgmUrl }) {
     </div>
   );
 }
+
+export default BgmPlayer;

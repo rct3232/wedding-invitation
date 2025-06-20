@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 
 import styles from "./dateCounter.module.css";
 
-export default function DateCounter (props) {
+const DateCounter = (props) => {
   const [timeLeft, setTimeLeft] = useState([0,0,0,0]);
   const timerId = useRef(null);
   const INTERVAL = 1000;
@@ -49,3 +49,5 @@ export default function DateCounter (props) {
     </div>
   );
 }
+
+export default DateCounter;

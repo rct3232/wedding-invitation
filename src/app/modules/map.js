@@ -2,10 +2,7 @@
 
 import React, { useEffect } from 'react';
 
-export default function Map({
-  clientId,
-  mapInfo
-}) {
+const Map = ({ clientId, mapInfo }) => {
   useEffect(() => {
     const initMap = () => {
       const mapOptions = {
@@ -37,3 +34,5 @@ export default function Map({
       <div id="map" style={{ width: '100%', aspectRatio: '1/1' }}/>
   );
 }
+
+export default Map;

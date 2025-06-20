@@ -1,7 +1,7 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
 import styles from "./greeting.module.css";
 
-export default function Greeting({ greeting, relation }) {
+const Greeting = ({ greeting, relation }) => {
   const parentCells = useRef({});
   const [layout, setLayout] = useState({ widths: [], total: "auto" });
 
@@ -86,3 +86,5 @@ export default function Greeting({ greeting, relation }) {
     </div>
   );
 }
+
+export default Greeting;
