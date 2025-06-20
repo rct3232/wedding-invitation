@@ -3,8 +3,7 @@ import styles from "./greeting.module.css";
 
 export default function Greeting({ greeting, relation }) {
   const parentCells = useRef({});
-  const [maxParentWidths, setMaxParentWidths] = useState([]);
-  const [totalParentWidth, setTotalParentWidth] = useState("auto");
+  const [layout, setLayout] = useState({ widths: [], total: "auto" });
 
   useLayoutEffect(() => {
     const widths = [];
@@ -20,15 +19,15 @@ export default function Greeting({ greeting, relation }) {
 
     // 컬럼 사이 간격(14px) 더하기
     sum += count * 14;
+    sum += "px";
 
-    setMaxParentWidths(widths);
-    setTotalParentWidth(sum);
+    setLayout({ widths, total: sum });
   }, [relation]);
 
   const generateDetailGridTemplate = (parentCount) => {
     let cols = [];
     for (let i = 0; i < parentCount; i++) {
-      const width = maxParentWidths[i] ? `${maxParentWidths[i] + 2}px` : "auto";
+      const width = layout.widths[i] ? `${layout.widths[i] + 2}px` : "auto";
       cols.push(width);
       if (i < parentCount - 1) cols.push("4px");
     }
@@ -37,7 +36,7 @@ export default function Greeting({ greeting, relation }) {
     return cols.join(" ")+" 14px";
   };
 
-  const generateContentGridTemplate = () => totalParentWidth + "px 28px auto";
+  const generateContentGridTemplate = () => layout.total + " 28px auto";
 
   return (
     <div className="body">
