@@ -11,28 +11,21 @@
   cursor: pointer;
 }
 
-.little {
-  font-size: 16px;
-}
-
-/* 내용 영역 */
-.body {
+.accordion {
   padding-top: 10px;
+  overflow: hidden;
 }
 
-/* 각 항목(item) 컨테이너 */
 .item {
   margin-bottom: 12px;
 }
 
-/* rowFlex : 텍스트와 버튼 영역을 좌우로 분리하여 수평 정렬 */
 .rowFlex {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-/* 왼쪽 텍스트 영역: 두 줄의 정보를 포함 */
 .textContainer {
   display: flex;
   flex-direction: column;
@@ -41,14 +34,12 @@
   font-size: 16px;
 }
 
-/* 오른쪽 버튼 컨테이너: 버튼들을 가로로 배열하며, 세로 중앙 정렬 */
 .buttonContainer {
   display: flex;
   gap: 16px;
   align-items: center;
 }
 
-/* 복사 버튼: 기존보다 크게 24px로 지정하여 클릭하기 편하게 함 */
 .copyButton {
   width: 24px;
   height: 24px;
@@ -67,7 +58,6 @@
   cursor: pointer;
 }
 
-/* 아코디언 토글 아이콘 */
 .iconAccordion {
   width: 12px;
   height: 12px;
@@ -75,4 +65,9 @@
   background-size: contain;
   background-position: center;
   cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.iconAccordionOpen {
+  transform: rotate(180deg);
 }
