@@ -25,6 +25,7 @@
 :root {
   --background: #F4F4F4;
   --foreground: #493628;
+  --backgroundTranspernt: #F4F4F400;
 }
 
 html,

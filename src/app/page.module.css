@@ -62,9 +62,9 @@
   padding: 150px 45px 20px 45px;
   background: linear-gradient(
     to bottom,
-    #f4f4f400 0%,
-    #f4f4f4 150px,
-    #f4f4f4 100%
+    var(--backgroundTranspernt)00 0%,
+    var(--background) 150px,
+    var(--background) 100%
   );
   overflow-y: auto;
 }
