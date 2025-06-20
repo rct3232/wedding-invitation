@@ -1,8 +1,8 @@
 .mapButtons {
   display: flex;
   justify-content: center;
-  gap: 12px;           /* 버튼 사이 간격 */
-  margin-top: 16px;    /* 위쪽 여백 */
+  gap: 12px;
+  margin: 16px 0;
 }
 .mapButton {
   display: block;
