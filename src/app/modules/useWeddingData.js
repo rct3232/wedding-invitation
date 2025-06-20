@@ -5,11 +5,15 @@ import { useState, useEffect } from "react";
 export default function useWeddingData() {
   const [data, setData] = useState(null);
   const [query, setQuery] = useState("default");
+  const [params, setParams] = useState(null);
 
   useEffect(() => {
     const segments = window.location.pathname.split("/").filter(Boolean);
     const currentQuery = segments[0] || "default";
     setQuery(currentQuery);
+
+    const currentParams = window.location.search;
+    setParams(currentParams);
 
     fetch(`/api/data/${currentQuery}`)
       .then((res) => {
@@ -56,5 +60,5 @@ export default function useWeddingData() {
       });
   }, []);
 
-  return { data, query };
+  return { data, query, params };
 }

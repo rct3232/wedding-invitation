@@ -21,7 +21,7 @@ import useWeddingData from "./modules/useWeddingData";
 export const dynamic = "force-dynamic";
 
 export default function Home() {
-  const { data, query } = useWeddingData();
+  const { data, query, params } = useWeddingData();
   const [isShrink, setIsShrink] = useState(false);
   const [isGradientActive, setIsGradientActive] = useState(false);
   const [hideBankSection, setHideBankSection] = useState(false);
@@ -29,7 +29,18 @@ export default function Home() {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    if (query.mode == "noAccount") setHideBankSection(true);
+    const modeParam = new URLSearchParams(params).get('mode');
+    if (modeParam){
+      try {
+        const uriDecoded = decodeURIComponent(modeParam);
+        const b64 = uriDecoded.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(uriDecoded.length / 4) * 4, "=");
+        
+        console.log(atob(b64));
+        if (atob(b64) == "noAccount") setHideBankSection(true);
+      } catch (e) {
+        console.error("base64 decode failed:", e);
+      }
+    }
   }, [query])
 
   const handleScroll = () => {
@@ -82,7 +93,7 @@ export default function Home() {
             <Gallery fullImages={data.galleryImage.fullImages} thumbImages={data.images} query={query} />
             <div className={styles.divider} />
             <Route placeInfo={data.place}/>
-            {hideBankSection && (
+            {!hideBankSection && (
               <>
                 <div className={styles.divider} />
                 <BankAccountAccordion accountInfo={data.account} />
