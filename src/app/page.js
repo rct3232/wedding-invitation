@@ -2,10 +2,11 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import Confetti from 'react-confetti'
+import Confetti from 'react-confetti';
 import styles from "./page.module.css";
 
 import SplashOverlay from "./modules/splashOverlay";
+import ConfettiPile from "./modules/ConfettiPile"; // Import the new component
 import HeaderImage from "./modules/headerImage";
 import Nametag from "./modules/nametag";
 import Greeting from "./modules/greeting";
@@ -25,8 +26,23 @@ export default function Home() {
   const [isShrink, setIsShrink] = useState(false);
   const [isGradientActive, setIsGradientActive] = useState(false);
   const [hideBankSection, setHideBankSection] = useState(false);
+  const [currentPileSize, setCurrentPileSize] = useState(0); // State for pile size
+  const [windowSize, setWindowSize] = useState({ width: undefined, height: undefined });
 
   const containerRef = useRef(null);
+
+  // Get window size for canvas dimensions
+  useEffect(() => {
+    function handleResize() {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    }
+    window.addEventListener("resize", handleResize);
+    handleResize(); // Call handler right away so state is updated with initial window size
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const modeParam = new URLSearchParams(params).get('mode');
@@ -39,7 +55,21 @@ export default function Home() {
         console.error("base64 decode failed:", e);
       }
     }
-  }, [query])
+  }, [query]);
+
+  // Effect to grow the pile size over time
+  useEffect(() => {
+    if (data && data.content && data.content.confetti) { // Ensure data is loaded
+      // Current react-confetti is set to recycle=true (default)
+      // So, we'll grow the pile over a few seconds and then keep it.
+      if (currentPileSize < 100) {
+        const timer = setTimeout(() => {
+          setCurrentPileSize(prevSize => Math.min(prevSize + 2, 100)); // Slower, smoother increment
+        }, 200); // Interval for growth
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [currentPileSize, data]);
 
   const handleScroll = () => {
     if (containerRef.current) {
@@ -112,7 +142,19 @@ export default function Home() {
           colors={data.content.confetti.color}
           opacity={0.5}
           drawShape={ctx => ctx.fill(new Path2D(data.content.confetti.shape))}
+          recycle={true} // Explicitly keep recycle true
+          width={windowSize.width} // Use window size for react-confetti as well
+          height={windowSize.height}
         />
+        {data.content.confetti && windowSize.width && (
+          <ConfettiPile
+            pileSize={currentPileSize}
+            colors={data.content.confetti.color}
+            shapeSVGPath={data.content.confetti.shape}
+            canvasWidth={windowSize.width}
+            targetPileHeight={100} // Adjust as needed, e.g., 100px
+          />
+        )}
         {data.bgmUrl && <BgmPlayer bgmUrl={data.bgmUrl} />}
       </div>
     </div>
