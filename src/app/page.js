@@ -2,13 +2,14 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import Confetti from 'react-confetti';
 import styles from "./page.module.css";
+import PhysicsConfetti from "./modules/PhysicsConfetti"; // Import the new confetti component
 
 import SplashOverlay from "./modules/splashOverlay";
-import ConfettiPile from "./modules/ConfettiPile"; // Import the new component
+// Removed ConfettiPile import
 import HeaderImage from "./modules/headerImage";
 import Nametag from "./modules/nametag";
+// Removed react-confetti import, will be replaced by PhysicsConfetti later
 import Greeting from "./modules/greeting";
 import DateCounter from "./modules/dateCounter";
 import HighlightCalendar from "./modules/highlightCalendar";
@@ -26,8 +27,8 @@ export default function Home() {
   const [isShrink, setIsShrink] = useState(false);
   const [isGradientActive, setIsGradientActive] = useState(false);
   const [hideBankSection, setHideBankSection] = useState(false);
-  const [currentPileSize, setCurrentPileSize] = useState(0); // State for pile size
-  const [windowSize, setWindowSize] = useState({ width: undefined, height: undefined });
+  // Removed currentPileSize state
+  const [windowSize, setWindowSize] = useState({ width: undefined, height: undefined }); // Keep for new canvas
 
   const containerRef = useRef(null);
 
@@ -57,19 +58,7 @@ export default function Home() {
     }
   }, [query]);
 
-  // Effect to grow the pile size over time
-  useEffect(() => {
-    if (data && data.content && data.content.confetti) { // Ensure data is loaded
-      // Current react-confetti is set to recycle=true (default)
-      // So, we'll grow the pile over a few seconds and then keep it.
-      if (currentPileSize < 100) {
-        const timer = setTimeout(() => {
-          setCurrentPileSize(prevSize => Math.min(prevSize + 2, 100)); // Slower, smoother increment
-        }, 200); // Interval for growth
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [currentPileSize, data]);
+  // Removed useEffect for currentPileSize growth
 
   const handleScroll = () => {
     if (containerRef.current) {
@@ -136,25 +125,19 @@ export default function Home() {
             </p>
           </footer>
         </div>
-        <Confetti
-          numberOfPieces={30}
-          gravity={0.02}
-          colors={data.content.confetti.color}
-          opacity={0.5}
-          drawShape={ctx => ctx.fill(new Path2D(data.content.confetti.shape))}
-          recycle={true} // Explicitly keep recycle true
-          width={windowSize.width} // Use window size for react-confetti as well
-          height={windowSize.height}
-        />
-        {data.content.confetti && windowSize.width && (
-          <ConfettiPile
-            pileSize={currentPileSize}
+        {/* Removed Confetti (react-confetti) component */}
+        {/* Removed ConfettiPile component */}
+
+        {/* Add PhysicsConfetti component if data and windowSize are available */}
+        {data && data.content && data.content.confetti && windowSize.width && windowSize.height && (
+          <PhysicsConfetti
             colors={data.content.confetti.color}
             shapeSVGPath={data.content.confetti.shape}
             canvasWidth={windowSize.width}
-            targetPileHeight={100} // Adjust as needed, e.g., 100px
+            canvasHeight={windowSize.height}
           />
         )}
+
         {data.bgmUrl && <BgmPlayer bgmUrl={data.bgmUrl} />}
       </div>
     </div>
