@@ -254,7 +254,6 @@ const PhysicsConfetti = ({
     const swipeDiv = swipeDetectionDivRef.current;
     let listenersAttached = false;
     if (swipeDiv && canvasHeight) {
-      // console.log("Attaching swipe event listeners to swipeDiv.");
       swipeDiv.addEventListener('mousedown', handlePointerDown);
       swipeDiv.addEventListener('touchstart', handlePointerDown, { passive: false });
       swipeDiv.addEventListener('mouseleave', handlePointerLeave);
@@ -264,13 +263,10 @@ const PhysicsConfetti = ({
       window.addEventListener('touchmove', handlePointerMove, { passive: false });
       window.addEventListener('touchend', handlePointerUp);
       listenersAttached = true;
-    } else {
-      // console.log("swipeDiv or canvasHeight not ready. Listeners NOT attached.");
     }
 
     // --- SINGLE CLEANUP FUNCTION ---
     return () => {
-      // console.log("Running cleanup for PhysicsConfetti effect");
       clearInterval(spawnInterval);
       if (runner) Matter.Runner.stop(runner); // Use runner from setup scope
       if (renderRef.current) { // Use renderRef for consistency
@@ -286,7 +282,6 @@ const PhysicsConfetti = ({
       // Cleanup swipe event listeners
       // Use the 'swipeDiv' variable captured in the setup scope for removeEventListener
       if (listenersAttached && swipeDiv) {
-          // console.log("Removing swipe event listeners from swipeDiv.");
           swipeDiv.removeEventListener('mousedown', handlePointerDown);
           swipeDiv.removeEventListener('touchstart', handlePointerDown);
           swipeDiv.removeEventListener('mouseleave', handlePointerLeave);
@@ -306,9 +301,8 @@ const PhysicsConfetti = ({
   };
   const swipeDetectionDivStyle = {
     position: 'fixed', bottom: 0, left: 0,
-    width: '100%', height: `${PILE_AREA_HEIGHT_PX}px`,
+    width: '100%', height: '30px',
     zIndex: 101, touchAction: 'none',
-    // backgroundColor: 'rgba(0,255,0,0.1)', // For debugging
   };
 
   return (
