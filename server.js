@@ -69,6 +69,8 @@ app.prepare().then(() => {
             };
 
         const parentAccounts = p.parent.flatMap(par => {
+          if (!par.bank) return [];
+          
           const parentAccount = par.bank.kakao
             ? {
                 title: par.title,
@@ -78,11 +80,11 @@ app.prepare().then(() => {
                 kakao: par.bank.kakao
               }
             : {
-                title: par.title,
-                name: par.name,
-                bank: par.bank.name,
-                account: par.bank.account
-              };
+              title: par.title,
+              name: par.name,
+              bank: par.bank.name,
+              account: par.bank.account
+            };
           return [parentAccount];
         });
 

@@ -301,7 +301,7 @@ const PhysicsConfetti = ({
   };
   const swipeDetectionDivStyle = {
     position: 'fixed', bottom: 0, left: 0,
-    width: '100%', height: '30px',
+    width: '100%', height: '25px',
     zIndex: 101, touchAction: 'none',
   };
 

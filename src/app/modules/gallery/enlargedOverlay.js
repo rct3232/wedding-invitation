@@ -1,9 +1,10 @@
-"use client"
+// modules/EnlargedOverlay.js
+"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import styles from "./gallery.module.css";
 
-const EnlargedOverlay = ({
+export default function EnlargedOverlay({
   fullImages,
   thumbImages,
   index,
@@ -12,276 +13,216 @@ const EnlargedOverlay = ({
   onNext,
   onPrev,
   onSelect,
-}) => {
-  const thumbRef = useRef(null);
+}) {
   const containerRef = useRef(null);
-  const [containerWidth, setContainerWidth] = useState(0);
-  useEffect(() => {
-    if (containerRef.current) setContainerWidth(containerRef.current.clientWidth)
-  }, []);
+  const thumbRef = useRef(null);
 
+  // ---- 기본 상태들 ----
   const [currentIndex, setCurrentIndex] = useState(index);
   const [imageCache, setImageCache] = useState({});
   const [imageLoaded, setImageLoaded] = useState({});
 
+  // 슬라이드 애니메이션용 상태
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [nextIndex, setNextIndex] = useState(null);
+  const [slideDir, setSlideDir] = useState(null); // "next" or "prev"
+  const [animOffsets, setAnimOffsets] = useState({ out: 0, in: 0 });
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  // 터치 스와이프 관련 refs
+  const touchStartX = useRef(0);
+  const dragging = useRef(false);
+  const swipedRef = useRef(false);
+  const threshold = 50;
+
+  // 1) 컨테이너 너비 구하기
   useEffect(() => {
-    const filename = fullImages[currentIndex];
-    if (!filename) return;
-    if (imageCache[filename]) {
-      setImageLoaded((prev) => ({ ...prev, [filename]: true }));
-    } else {
-      fetch(`/api/image/${query}/${filename}`)
-        .then((response) => {
-          if (!response.ok) throw new Error("Network error");
-          return response.blob();
-        })
-        .then((blob) => {
-          const url = URL.createObjectURL(blob);
-          setImageCache((prev) => ({ ...prev, [filename]: url }));
-          setImageLoaded((prev) => ({ ...prev, [filename]: true }));
-        })
-        .catch((err) => console.error("Error fetching image:", err));
+    if (containerRef.current) {
+      setContainerWidth(containerRef.current.clientWidth);
     }
+  }, []);
+
+  // 2) currentIndex 바뀔 때 이미지 preload
+  useEffect(() => {
+    const file = fullImages[currentIndex];
+    if (!file) return;
+    if (imageCache[file]) {
+      setImageLoaded((p) => ({ ...p, [file]: true }));
+      return;
+    }
+    fetch(`/api/image/${query}/${file}`)
+      .then((res) => res.blob())
+      .then((blob) => {
+        const url = URL.createObjectURL(blob);
+        setImageCache((p) => ({ ...p, [file]: url }));
+        setImageLoaded((p) => ({ ...p, [file]: true }));
+      })
+      .catch(console.error);
   }, [currentIndex, fullImages, query, imageCache]);
 
+  // 3) 썸네일 중앙 스크롤
   useEffect(() => {
-    if (thumbRef.current) {
-      const active = thumbRef.current.querySelector(`.${styles.activeThumbnail}`);
-      if (active) {
-        active.scrollIntoView({
-          behavior: "smooth",
-          inline: "center",
-          block: "nearest",
-        });
-      }
+    if (!thumbRef.current) return;
+    const active = thumbRef.current.querySelector(`.${styles.activeThumbnail}`);
+    if (active) {
+      active.scrollIntoView({ behavior: "smooth", inline: "center" });
     }
   }, [currentIndex]);
 
-  const [dragOffset, setDragOffset] = useState(0);
-  const [transitionValue, setTransitionValue] = useState({ isTrans: false, type: null}); // null, "restore", "switch"
-  const [transitionPos, setTransitionPos] = useState({in: 0, out: 0});
+  // 4) 슬라이드 애니메이션 시작 함수
+  const startSlide = (dir) => {
+    if (isAnimating) return;
+    const ni = dir === "next" ? currentIndex + 1 : currentIndex - 1;
+    if (ni < 0 || ni >= fullImages.length) return;
 
-  const touchStartX = useRef(0);
-  const touchStartY = useRef(0);
-  const dragging = useRef(false);
-  const swipedRef = useRef(false);
+    setNextIndex(ni);
+    setSlideDir(dir);
+    setIsAnimating(true);
 
-  const threshold = 50;
+    // 4-1) 첫 단계: outgoing=0, incoming=±width
+    setAnimOffsets({
+      out: 0,
+      in: dir === "next" ? containerWidth : -containerWidth,
+    });
 
+    // 4-2) 다음 틱에서 목표 위치로 이동
+    setTimeout(() => {
+      setAnimOffsets({
+        out: dir === "next" ? -containerWidth : containerWidth,
+        in: 0,
+      });
+    }, 20);
+  };
+
+  // 5) transition 끝났을 때 상태 정리
+  const onImageTransitionEnd = () => {
+    if (!isAnimating) return;
+
+    setCurrentIndex(nextIndex);
+    setNextIndex(null);
+    setSlideDir(null);
+    setIsAnimating(false);
+    setAnimOffsets({ out: 0, in: 0 });
+
+    if (slideDir === "next") onNext?.();
+    if (slideDir === "prev") onPrev?.();
+  };
+
+  // 6) 버튼 핸들러
+  const handlePrev = (e) => {
+    e.stopPropagation();
+    startSlide("prev");
+  };
+  const handleNext = (e) => {
+    e.stopPropagation();
+    startSlide("next");
+  };
+
+  // 7) 터치 스와이프 (기존 로직 그대로)
   const handleTouchStart = (e) => {
-    if (transitionValue.isTrans) return;
+    if (isAnimating) return;
     dragging.current = true;
     swipedRef.current = false;
     touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-    setDragOffset(0);
+    setAnimOffsets({ out: 0, in: 0 });
   };
-
   const handleTouchMove = (e) => {
-    if (!dragging.current || transitionValue.isTrans) return;
-    const currentX = e.touches[0].clientX;
-    const diffX = currentX - touchStartX.current;
-    if (Math.abs(diffX) > 10) {
-      swipedRef.current = true;
-    }
-    setDragOffset(diffX);
+    if (!dragging.current || isAnimating) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    if (Math.abs(dx) > 10) swipedRef.current = true;
+    // 임시로 one-image 드래그 이펙트
+    setAnimOffsets({ out: dx, in: 0 });
   };
-
-  const handleTouchEnd = (e) => {
-    if (!dragging.current || transitionValue.isTrans) return;
+  const handleTouchEnd = () => {
+    if (!dragging.current || isAnimating) return;
     dragging.current = false;
-    const absOffset = Math.abs(dragOffset);
-    if (absOffset < threshold) {
-      setTransitionValue({ isTrans: true, type: "restore" });
-      setTimeout(() => {
-        setDragOffset(0);
-      }, 10);
-      setTimeout(() => {
-        setTransitionValue({ isTrans: false, type: null });
-      }, 300);
-      onClose();
-    } else {
-      const direction = dragOffset < 0 ? "next" : "prev";
-      let newIndex = currentIndex + (direction === "next" ? 1 : -1);
-      if (newIndex < 0 || newIndex >= fullImages.length) {
-        setTransitionValue({ isTrans: true, type: "restore" });
-        setTimeout(() => {
-          setDragOffset(0);
-        }, 10);
-        setTimeout(() => {
-          setTransitionValue({ isTrans: false, type: null });
-        }, 300);
-        return;
-      }
-      setTransitionValue({ isTrans: true, type: "switch" });
-      setTransitionPos({ in: direction === "next" ? containerWidth : -containerWidth, out: dragOffset });
-      setTimeout(() => {
-        setTransitionPos({ in: 0, out: direction === "next" ? -containerWidth : containerWidth });
-      }, 10);
-      setTimeout(() => {
-        setCurrentIndex(newIndex);
-        setDragOffset(0);
-        setTransitionValue({ isTrans: false, type: null });
-        setTransitionPos({ in: 0, out: 0 })
-        if (direction === "next" && onNext) onNext();
-        if (direction === "prev" && onPrev) onPrev();
-      }, 310);
-    }
-  };
-
-  const handleClick = (e) => {
-    if (swipedRef.current) {
-      swipedRef.current = false;
+    const dx = animOffsets.out;
+    if (Math.abs(dx) < threshold) {
+      // 복원
+      setAnimOffsets({ out: 0, in: 0 });
       return;
     }
-    onClose();
+    // 스와이프와 동일하게 애니메이션 재생
+    const dir = dx < 0 ? "next" : "prev";
+    startSlide(dir);
   };
 
-  const handlePrev = (e) => {
-    e.stopPropagation();
-    if (transitionValue.isTrans) return;
-    setDragOffset(containerWidth);
-    setTimeout(() => {
-      setTransitionValue({ isTrans: true, type: "switch" });
-      setTransitionPos({ in: -containerWidth, out: containerWidth });
-      setTimeout(() => {
-        setTransitionPos({ in: 0, out: containerWidth });
-      }, 10);
-      setTimeout(() => {
-        const newIndex = currentIndex - 1;
-        setCurrentIndex(newIndex);
-        setDragOffset(0);
-        setTransitionValue({ isTrans: false, type: null });
-        setTransitionPos({ in: 0, out: 0 });
-        if (onPrev) onPrev();
-      }, 310);
-    }, 0);
-  };
+  // 8) 이미지 렌더링
+  const renderImages = () => {
+    const outFile = fullImages[currentIndex];
+    const outSrc  = imageCache[outFile] || "";
+    const inFile  = nextIndex != null ? fullImages[nextIndex] : null;
+    const inSrc   = inFile ? imageCache[inFile] : "";
 
-  const handleNext = (e) => {
-    e.stopPropagation();
-    if (transitionValue.isTrans) return;
-    setDragOffset(-containerWidth);
-    setTimeout(() => {
-      setTransitionValue({ isTrans: true, type: "switch" });
-      setTransitionPos({ in: containerWidth, out: -containerWidth })
-      setTimeout(() => {
-        setTransitionPos({ in: 0, out: -containerWidth });
-      }, 10);
-      setTimeout(() => {
-        const newIndex = currentIndex + 1;
-        setCurrentIndex(newIndex);
-        setDragOffset(0);
-        setTransitionValue({ isTrans: false, type: null });
-        setTransitionPos({ in: 0, out: 0 });
-        if (onNext) onNext();
-      }, 310);
-    }, 0);
-  };
+    // ── 애니메이션 중일 때 (2개 이미지 슬라이드) ──
+    if (isAnimating && nextIndex != null) {
+      return (
+        <div className={styles.enlargedContainer}>
+          <img
+            className={styles.largeImage}
+            src={outSrc}
+            style={{ transform: `translateX(${animOffsets.out}px)` }}
+          />
+          <img
+            className={styles.largeImage}
+            src={inSrc}
+            style={{ transform: `translateX(${animOffsets.in}px)` }}
+            onTransitionEnd={onImageTransitionEnd}
+          />
+        </div>
+      );
+    }
 
-  let renderedContent;
-  if (transitionValue.type === "switch") {
-    const direction = dragOffset < 0 ? "next" : "prev";
-    const newIndex = currentIndex + (direction === "next" ? 1 : -1);
-    const outgoingSrc = imageCache[fullImages[currentIndex]] || "";
-    const incomingSrc = imageCache[fullImages[newIndex]] || "";
-    renderedContent = (
-      <div
-        className={styles.enlargedContainer}
-        onClick={(e) => e.stopPropagation()}
-      >
+    // ── Static 렌더: 단일 이미지, transition 끔 ──
+    return (
+      <div className={styles.enlargedContainer}>
         <img
-          className={styles.largeImage}
-          src={outgoingSrc}
-          alt={`Image ${currentIndex + 1}`}
-          loading="lazy"
-          style={{
-            transform: `translateX(${transitionPos.out}px)`,
-            transition: "transform 300ms ease",
-          }}
+          className={`${styles.largeImage} ${styles["no-transition"]}`}
+          src={outSrc}
+          alt=""
+          onLoad={() =>
+            setImageLoaded((p) => ({ ...p, [outFile]: true }))
+          }
+          style={{ transform: 'translateX(0px)' }}
         />
-        <img
-          className={styles.largeImage}
-          src={incomingSrc}
-          alt={`Image ${newIndex + 1}`}
-          loading="lazy"
-          style={{
-            transform: `translateX(${transitionPos.in}px)`,
-            transition: "transform 300ms ease",
-          }}
-        />
-        {!imageLoaded[fullImages[currentIndex]] && (
-          <div className={styles.loader}></div>
-        )}
+        {!imageLoaded[outFile] && <div className={styles.loader} />}
       </div>
     );
-  } else {
-    const currentSrc = imageCache[fullImages[currentIndex]] || "";
-    renderedContent = (
-      <div
-        className={styles.enlargedContainer}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <img
-          className={styles.largeImage}
-          src={currentSrc}
-          alt={`Image ${currentIndex + 1}`}
-          loading="lazy"
-          onLoad={() => setImageLoaded((prev) => ({ ...prev, [fullImages[currentIndex]]: true }))}
-          style={{
-            transform: `translateX(${dragOffset}px)`,
-            transition: transitionValue.isTrans && transitionValue.type === "restore"
-              ? "transform 300ms ease"
-              : "none",
-            visibility: imageLoaded[fullImages[currentIndex]]
-              ? "visible"
-              : "hidden",
-          }}
-        />
-        {!imageLoaded[fullImages[currentIndex]] && (
-          <div className={styles.loader}></div>
-        )}
-      </div>
-    );
-  }
+  };
 
   return (
-    <div className={styles.overlay} onClick={handleClick}>
+    <div className={styles.overlay}>
       <div
         className={styles.content}
         ref={containerRef}
-        onClick={handleClick}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {renderedContent}
-        {currentIndex > 0 && !transitionValue.isTrans && (
+        {renderImages()}
+
+        {/* 버튼 컨트롤 */}
+        <div className={styles.controlsOverlay}>
           <button
-            className={styles.prev}
-            onClick={(e) => {
-              e.stopPropagation();
-              handlePrev(e);
-            }}
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchEnd={(e) => e.stopPropagation()}
+            className={`${styles.controlButton} ${currentIndex === 0 ? styles.controlButtonDisabled : ""}`}
+            onClick={currentIndex === 0 ? undefined : handlePrev}
+            disabled={currentIndex === 0}
           >
-            {"<"}
+            ‹
           </button>
-        )}
-        {currentIndex < fullImages.length - 1 && !transitionValue.isTrans && (
+          <button className={styles.controlButton} onClick={onClose}>
+            ✕
+          </button>
           <button
-            className={styles.next}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleNext(e);
-            }}
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchEnd={(e) => e.stopPropagation()}
+            className={`${styles.controlButton} ${currentIndex === fullImages.length - 1 ? styles.controlButtonDisabled : ""}`}
+            onClick={currentIndex === fullImages.length - 1 ? undefined : handleNext}
+            disabled={currentIndex === fullImages.length - 1}
           >
-            {">"}
+            ›
           </button>
-        )}
+        </div>
+
+        {/* 썸네일 바 (클릭만 전파 차단 후 onSelect) */}
         <div
           className={styles.thumbnailBar}
           ref={thumbRef}
@@ -290,16 +231,18 @@ const EnlargedOverlay = ({
           {thumbImages.map((img, i) => (
             <div
               key={i}
-              className={`${styles.thumbnail} ${i === currentIndex ? styles.activeThumbnail : ""}`}
+              className={`${styles.thumbnail} ${
+                i === currentIndex ? styles.activeThumbnail : ""
+              }`}
               onClick={(e) => {
                 e.stopPropagation();
-                onSelect(i);
                 setCurrentIndex(i);
+                onSelect(i);
               }}
             >
               <img
                 src={`data:image/jpeg;base64,${img.content}`}
-                alt={`Thumbnail ${i + 1}`}
+                alt=""
                 loading="lazy"
               />
             </div>
@@ -308,6 +251,4 @@ const EnlargedOverlay = ({
       </div>
     </div>
   );
-};
-
-export default EnlargedOverlay;
+}
