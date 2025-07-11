@@ -146,11 +146,24 @@ const PhysicsConfetti = ({
       const timestamp = engine.timing.timestamp;
       const windStrength = 0.000005;
       const windForceX = Math.sin(timestamp * 0.001) * windStrength;
+      const now = Date.now();
       Matter.Composite.allBodies(engine.world).forEach(body => {
         if (body.label === 'confetti') {
           const nearFloorThreshold = canvasHeight - 15;
+          const pileAreaYStart = canvasHeight - PILE_AREA_HEIGHT_PX;
           const isNearFloor = body.position.y >= nearFloorThreshold;
+          const isInPileArea = body.position.y >= pileAreaYStart;
           const isNearlyStill = Matter.Vector.magnitude(body.velocity) < 0.1 && Math.abs(body.angularVelocity) < 0.1;
+          // Track when confetti enters pile area
+          if (isInPileArea) {
+            if (!body.pileEnteredAt) {
+              body.pileEnteredAt = now;
+            }
+          } else {
+            if (body.pileEnteredAt) {
+              delete body.pileEnteredAt;
+            }
+          }
           if (body.isSleeping || (isNearFloor && isNearlyStill)) {
             Matter.Body.setAngularVelocity(body, 0);
             if (!body.isSleeping && isNearFloor && isNearlyStill) Matter.Sleeping.set(body, true);
@@ -160,11 +173,36 @@ const PhysicsConfetti = ({
         }
       });
     });
+    // Remove one confetti from pile if it has been there for over 10 seconds, with fade-out animation
+    const FADE_OUT_DURATION = 700; // ms
+    const pileCleanupInterval = setInterval(() => {
+      const now = Date.now();
+      const bodies = Matter.Composite.allBodies(engine.world);
+      // Remove any confetti that finished fading out
+      bodies.forEach(b => {
+        if (b.label === 'confetti') {
+          if (b.isFadingOut && b.fadeStartTime && (now - b.fadeStartTime > FADE_OUT_DURATION)) {
+            Matter.World.remove(engine.world, b);
+          }
+          if (b.isSwipingOut && b.swipeOutStart && (now - b.swipeOutStart > FADE_OUT_DURATION)) {
+            Matter.World.remove(engine.world, b);
+          }
+        }
+      });
+      // Find all confetti in pile area with pileEnteredAt set and over 10s, not already fading out
+      const pileAreaYStart = canvasHeight - PILE_AREA_HEIGHT_PX;
+      const piled = bodies.filter(b => b.label === 'confetti' && b.pileEnteredAt && !b.isFadingOut && b.position.y >= pileAreaYStart && (now - b.pileEnteredAt > 10000));
+      if (piled.length > 0) {
+        // Mark only one per interval for fade-out
+        piled[0].isFadingOut = true;
+        piled[0].fadeStartTime = now;
+      }
+    }, 1000);
 
     Matter.Events.on(render, 'afterRender', () => {
       const context = render.context;
       const bodies = Matter.Composite.allBodies(engine.world);
-      context.save(); context.globalAlpha = 0.7;
+      context.save();
       bodies.forEach(body => {
         if (body.label === 'confetti' && body.customRender && body.customRender.svgPath) {
           let widthScaleFactor;
@@ -176,8 +214,24 @@ const PhysicsConfetti = ({
             const baseWidthScale = Math.abs(Math.sin(body.customRender.flipCycle));
             widthScaleFactor = 0.1 + baseWidthScale * 0.9;
           }
+          // Fade-out and swipe-out animation
+          let alpha = 0.7;
+          let extraTranslateX = 0;
+          if (body.isSwipingOut && body.swipeOutStart && body.swipeOutDirection) {
+            const now = Date.now();
+            const elapsed = now - body.swipeOutStart;
+            const progress = Math.min(1, elapsed / FADE_OUT_DURATION);
+            alpha = 0.7 * (1 - progress);
+            // Move 300px in swipe direction over fade duration
+            extraTranslateX = body.swipeOutDirection * 300 * progress;
+          } else if (body.isFadingOut && body.fadeStartTime) {
+            const now = Date.now();
+            const elapsed = now - body.fadeStartTime;
+            alpha = 0.7 * Math.max(0, 1 - (elapsed / FADE_OUT_DURATION));
+          }
           context.save();
-          context.translate(body.position.x, body.position.y);
+          context.globalAlpha = alpha;
+          context.translate(body.position.x + extraTranslateX, body.position.y);
           context.rotate(body.angle);
           context.scale(widthScaleFactor * particleVisualScale, particleVisualScale);
           context.fillStyle = body.customRender.color || '#000000';
@@ -190,7 +244,7 @@ const PhysicsConfetti = ({
           context.restore();
         }
       });
-      context.globalAlpha = 1.0; context.restore();
+      context.restore();
     });
 
     Matter.Render.run(render);
@@ -240,7 +294,16 @@ const PhysicsConfetti = ({
           const bodiesInSwipePath = Matter.Query.region(Matter.Composite.allBodies(engine.world), swipeBounds);
           const particlesToRemove = bodiesInSwipePath.filter(body =>
             body.label === 'confetti' && body.position.y >= pileAreaYStart);
-          particlesToRemove.forEach(particle => Matter.World.remove(engine.world, particle));
+          const now = Date.now();
+          // Determine swipe direction (left or right)
+          const swipeDir = deltaX > 0 ? 1 : -1;
+          particlesToRemove.forEach(particle => {
+            if (!particle.isFadingOut && !particle.isSwipingOut) {
+              particle.isSwipingOut = true;
+              particle.swipeOutStart = now;
+              particle.swipeOutDirection = swipeDir;
+            }
+          });
         }
       }
       swipeState.current = { ...swipeState.current, isActive: false, isSwiping: false };
@@ -268,6 +331,7 @@ const PhysicsConfetti = ({
     // --- SINGLE CLEANUP FUNCTION ---
     return () => {
       clearInterval(spawnInterval);
+      clearInterval(pileCleanupInterval);
       if (runner) Matter.Runner.stop(runner); // Use runner from setup scope
       if (renderRef.current) { // Use renderRef for consistency
           Matter.Render.stop(renderRef.current);
