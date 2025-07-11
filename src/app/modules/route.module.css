@@ -1,26 +1,43 @@
 .mapButtons {
   display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin: 16px 0;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 420px;
+  margin: 16px auto;
 }
 .mapButton {
-  display: block;
-  margin: 0 1rem;
-  width: 36px;
+  display: flex;
+  align-items: center;
+  flex: 1 1 0;
+  justify-content: center;
   height: 36px;
-  background-size: cover;
+}
+.iconSmall {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
-  border: none;
-  border-radius: 30%;
+  flex-shrink: 0;
+  border-radius: 7px;
+  overflow: hidden;
 }
-.mapButton.naver {
+.naverIcon {
   background-image: url("/navermap.png");
 }
-.mapButton.kakao {
+.kakaoIcon {
   background-image: url("/kakaomap.png");
 }
-.mapButton.tmap {
+.tmapIcon {
   background-image: url("/tmap.png");
+}
+.mapButtonDivider {
+  display: flex;
+  align-items: center;
+  color: #bbb;
+  font-size: 18px;
+  user-select: none;
+  margin: 0 0.5em;
 }
