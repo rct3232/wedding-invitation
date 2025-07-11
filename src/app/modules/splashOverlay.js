@@ -24,7 +24,7 @@ const SplashOverlay = ({ data }) => {
   if (!showSplash) return null;
 
   return (
-    <div className={`${styles.splash} ${!splashVisible ? styles.hide : ""}`}>
+    <div className={`${styles.splash} ${!splashVisible ? styles.hide : ""}`} onTouchMove={e=>e.preventDefault()} style={{ overscrollBehavior: "none", touchAction: "none"}}>
       <div className={styles["splash-text"]}>
         {data.person[0].name.kor.last}{data.person[0].name.kor.first} 💛 {data.person[1].name.kor.last}{data.person[1].name.kor.first}
       </div>

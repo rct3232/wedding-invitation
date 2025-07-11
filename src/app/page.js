@@ -32,7 +32,6 @@ export default function Home() {
 
   const containerRef = useRef(null);
 
-  // Get window size for canvas dimensions
   useEffect(() => {
     function handleResize() {
       setWindowSize({
@@ -58,7 +57,12 @@ export default function Home() {
     }
   }, [query]);
 
-  // Removed useEffect for currentPileSize growth
+  useEffect(() => {
+    if (data) {
+      window.scrollTo(0, 0);
+      if (containerRef.current) containerRef.current.scrollTop = 0;
+    }
+  }, [data]);
 
   const handleScroll = () => {
     if (containerRef.current) {
