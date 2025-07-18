@@ -1,27 +1,36 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { useLayoutEffect, useRef, useState, useEffect } from "react";
 import styles from "./greeting.module.css";
 
 const Greeting = ({ greeting, relation }) => {
   const parentCells = useRef({});
   const [layout, setLayout] = useState({ widths: [], total: "auto" });
+  const containerRef = useRef(null);
 
   useLayoutEffect(() => {
-    const widths = [];
-    let sum = 6;
-    let count = 0;
+    const observer = new MutationObserver(() => {
+      const widths = [];
+      let sum = 6;
+      let count = 0;
 
-    Object.entries(parentCells.current).forEach(([key, w]) => {
-      const idx = +key;
-      widths[idx] = w;
-      sum += w;
-      count++;
+      Object.entries(parentCells.current).forEach(([key, w]) => {
+        const idx = +key;
+        widths[idx] = w;
+        sum += w;
+        count++;
+      });
+
+      // 컬럼 사이 간격(14px) 더하기
+      sum += count * 14;
+      sum += "px";
+
+      setLayout({ widths, total: sum });
     });
 
-    // 컬럼 사이 간격(14px) 더하기
-    sum += count * 14;
-    sum += "px";
+    if (containerRef.current) {
+      observer.observe(containerRef.current, { childList: true, subtree: true });
+    }
 
-    setLayout({ widths, total: sum });
+    return () => observer.disconnect();
   }, [relation]);
 
   const generateDetailGridTemplate = (parentCount) => {
@@ -33,13 +42,13 @@ const Greeting = ({ greeting, relation }) => {
     }
 
     if (cols.length < 2) return "auto 14px";
-    return cols.join(" ")+" 14px";
+    return cols.join(" ") + " 14px";
   };
 
   const generateContentGridTemplate = () => layout.total + " 28px auto";
 
   return (
-    <div className="body">
+    <div className="body" ref={containerRef}>
       <div className={styles.greeting}>{greeting}</div>
       <div className={styles.relation}>
         {relation.map((rel, relIndex) => (
@@ -55,7 +64,14 @@ const Greeting = ({ greeting, relation }) => {
               {rel.parent.map((parentText, i) => (
                 <React.Fragment key={i}>
                   <div
-                    style={{ textAlign: i === 0 ? "right" : i === rel.parent.length - 1 ? "left" : "center"}}
+                    style={{
+                      textAlign:
+                        i === 0
+                          ? "right"
+                          : i === rel.parent.length - 1
+                          ? "left"
+                          : "center",
+                    }}
                     ref={(el) => {
                       if (el) {
                         const currentWidth = el.offsetWidth;
@@ -68,7 +84,7 @@ const Greeting = ({ greeting, relation }) => {
                     {parentText}
                   </div>
                   {i < rel.parent.length - 1 && (
-                    <div style={{ textAlign: "center"}}>·</div>
+                    <div style={{ textAlign: "center" }}>·</div>
                   )}
                 </React.Fragment>
               ))}
@@ -77,7 +93,10 @@ const Greeting = ({ greeting, relation }) => {
             <div className={styles.titleWrapper} style={{ textAlign: "center" }}>
               {rel.title}
             </div>
-            <div className={styles.nameWrapper} style={{ fontWeight: "bold", textAlign: "center" }}>
+            <div
+              className={styles.nameWrapper}
+              style={{ fontWeight: "bold", textAlign: "center" }}
+            >
               {rel.name}
             </div>
           </div>
@@ -85,6 +104,6 @@ const Greeting = ({ greeting, relation }) => {
       </div>
     </div>
   );
-}
+};
 
 export default Greeting;
