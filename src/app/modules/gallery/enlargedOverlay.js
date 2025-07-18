@@ -72,8 +72,11 @@ export default function EnlargedOverlay({
   // 4) 슬라이드 애니메이션 시작 함수
   const startSlide = (dir) => {
     if (isAnimating) return;
-    const ni = dir === "next" ? currentIndex + 1 : currentIndex - 1;
-    if (ni < 0 || ni >= fullImages.length) return;
+    let ni = dir === "next" ? currentIndex + 1 : currentIndex - 1;
+
+    // 순환 로직 추가
+    if (ni < 0) ni = fullImages.length - 1;
+    if (ni >= fullImages.length) ni = 0;
 
     setNextIndex(ni);
     setSlideDir(dir);
@@ -150,9 +153,9 @@ export default function EnlargedOverlay({
   // 8) 이미지 렌더링
   const renderImages = () => {
     const outFile = fullImages[currentIndex];
-    const outSrc  = imageCache[outFile] || "";
-    const inFile  = nextIndex != null ? fullImages[nextIndex] : null;
-    const inSrc   = inFile ? imageCache[inFile] : "";
+    const outSrc = imageCache[outFile] || "";
+    const inFile = nextIndex != null ? fullImages[nextIndex] : null;
+    const inSrc = inFile ? imageCache[inFile] : "";
 
     // ── 애니메이션 중일 때 (2개 이미지 슬라이드) ──
     if (isAnimating && nextIndex != null) {
@@ -190,6 +193,37 @@ export default function EnlargedOverlay({
     );
   };
 
+  // 썸네일 바 렌더링 수정
+  const renderThumbnails = () => {
+    const extendedThumbs = [
+      ...thumbImages.slice(currentIndex),
+      ...thumbImages.slice(0, currentIndex),
+    ];
+
+    return extendedThumbs.map((img, i) => {
+      const actualIndex = (currentIndex + i) % thumbImages.length;
+      return (
+        <div
+          key={i}
+          className={`${styles.thumbnail} ${
+            actualIndex === currentIndex ? styles.activeThumbnail : ""
+          }`}
+          onClick={(e) => {
+            e.stopPropagation();
+            setCurrentIndex(actualIndex);
+            onSelect(actualIndex);
+          }}
+        >
+          <img
+            src={`data:image/jpeg;base64,${img.content}`}
+            alt=""
+            loading="lazy"
+          />
+        </div>
+      );
+    });
+  };
+
   return (
     <div className={styles.overlay}>
       <div
@@ -204,9 +238,8 @@ export default function EnlargedOverlay({
         {/* 버튼 컨트롤 */}
         <div className={styles.controlsOverlay}>
           <button
-            className={`${styles.controlButton} ${currentIndex === 0 ? styles.controlButtonDisabled : ""}`}
-            onClick={currentIndex === 0 ? undefined : handlePrev}
-            disabled={currentIndex === 0}
+            className={styles.controlButton}
+            onClick={handlePrev}
           >
             ‹
           </button>
@@ -214,39 +247,20 @@ export default function EnlargedOverlay({
             ✕
           </button>
           <button
-            className={`${styles.controlButton} ${currentIndex === fullImages.length - 1 ? styles.controlButtonDisabled : ""}`}
-            onClick={currentIndex === fullImages.length - 1 ? undefined : handleNext}
-            disabled={currentIndex === fullImages.length - 1}
+            className={styles.controlButton}
+            onClick={handleNext}
           >
             ›
           </button>
         </div>
 
-        {/* 썸네일 바 (클릭만 전파 차단 후 onSelect) */}
+        {/* 썸네일 바 */}
         <div
           className={styles.thumbnailBar}
           ref={thumbRef}
           onClick={(e) => e.stopPropagation()}
         >
-          {thumbImages.map((img, i) => (
-            <div
-              key={i}
-              className={`${styles.thumbnail} ${
-                i === currentIndex ? styles.activeThumbnail : ""
-              }`}
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentIndex(i);
-                onSelect(i);
-              }}
-            >
-              <img
-                src={`data:image/jpeg;base64,${img.content}`}
-                alt=""
-                loading="lazy"
-              />
-            </div>
-          ))}
+          {renderThumbnails()}
         </div>
       </div>
     </div>
