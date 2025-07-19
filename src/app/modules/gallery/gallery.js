@@ -26,7 +26,7 @@ const Gallery = ({ fullImages, thumbImages, query }) => {
 
   const openOverlay = (i) => {
     // 만약 해당 셀이 placeholder라면 아무 작업도 하지 않음
-    if (!mainThumbs[i]) return;
+    if (!showModal &&!mainThumbs[i]) return;
     setOverlayData({ isOpen: true, index: i });
   };
   const closeOverlay = () => setOverlayData({ isOpen: false, index: null });
