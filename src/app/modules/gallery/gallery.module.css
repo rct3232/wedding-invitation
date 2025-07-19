@@ -160,6 +160,7 @@
   overflow-x: auto;
   scrollbar-width: none;
   z-index: 340;
+  justify-content: flex-start;
 }
 
 .thumbnailBar::-webkit-scrollbar {
@@ -172,10 +173,13 @@
   margin-right: 10px;
   border: 2px solid transparent;
   cursor: pointer;
+  width: 56px;
+  box-sizing: border-box;
 }
 
 .thumbnail img {
   height: 100%;
+  width: 100%;
   object-fit: cover;
 }
 

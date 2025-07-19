@@ -63,9 +63,18 @@ export default function EnlargedOverlay({
   // 3) 썸네일 중앙 스크롤
   useEffect(() => {
     if (!thumbRef.current) return;
-    const active = thumbRef.current.querySelector(`.${styles.activeThumbnail}`);
+    const bar = thumbRef.current;
+    const active = bar.querySelector('.active-thumbnail');
     if (active) {
-      active.scrollIntoView({ behavior: "smooth", inline: "center" });
+      const barWidth = bar.clientWidth;
+      const activeLeft = active.offsetLeft;
+      const activeWidth = active.offsetWidth;
+      const scrollTo = activeLeft - (barWidth / 2) + (activeWidth / 2);
+      const maxScroll = bar.scrollWidth - barWidth;
+      bar.scrollTo({
+        left: Math.max(0, Math.min(scrollTo, maxScroll)),
+        behavior: "smooth"
+      });
     }
   }, [currentIndex]);
 
@@ -195,33 +204,23 @@ export default function EnlargedOverlay({
 
   // 썸네일 바 렌더링 수정
   const renderThumbnails = () => {
-    const extendedThumbs = [
-      ...thumbImages.slice(currentIndex),
-      ...thumbImages.slice(0, currentIndex),
-    ];
-
-    return extendedThumbs.map((img, i) => {
-      const actualIndex = (currentIndex + i) % thumbImages.length;
-      return (
-        <div
-          key={i}
-          className={`${styles.thumbnail} ${
-            actualIndex === currentIndex ? styles.activeThumbnail : ""
-          }`}
-          onClick={(e) => {
-            e.stopPropagation();
-            setCurrentIndex(actualIndex);
-            onSelect(actualIndex);
-          }}
-        >
-          <img
-            src={`data:image/jpeg;base64,${img.content}`}
-            alt=""
-            loading="lazy"
-          />
-        </div>
-      );
-    });
+    return thumbImages.map((img, i) => (
+      <div
+        key={i}
+        className={`${styles.thumbnail} ${i === currentIndex ? styles.activeThumbnail + " active-thumbnail" : ""}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          setCurrentIndex(i);
+          onSelect(i);
+        }}
+      >
+        <img
+          src={`data:image/jpeg;base64,${img.content}`}
+          alt=""
+          loading="lazy"
+        />
+      </div>
+    ));
   };
 
   return (
