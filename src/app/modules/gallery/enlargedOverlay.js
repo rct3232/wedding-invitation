@@ -130,31 +130,28 @@ export default function EnlargedOverlay({
     startSlide("next");
   };
 
-  // 7) 터치 스와이프 (기존 로직 그대로)
+  // 7) 터치 스와이프 (썸네일바 스크롤 방지 추가)
   const handleTouchStart = (e) => {
-    if (isAnimating) return;
+    if (isAnimating || e.target.closest(`.${styles.thumbnailBar}`)) return; // 썸네일바에서 스와이프 방지
     dragging.current = true;
     swipedRef.current = false;
     touchStartX.current = e.touches[0].clientX;
     setAnimOffsets({ out: 0, in: 0 });
   };
   const handleTouchMove = (e) => {
-    if (!dragging.current || isAnimating) return;
+    if (!dragging.current || isAnimating || e.target.closest(`.${styles.thumbnailBar}`)) return; // 썸네일바에서 스와이프 방지
     const dx = e.touches[0].clientX - touchStartX.current;
     if (Math.abs(dx) > 10) swipedRef.current = true;
-    // 임시로 one-image 드래그 이펙트
     setAnimOffsets({ out: dx, in: 0 });
   };
-  const handleTouchEnd = () => {
-    if (!dragging.current || isAnimating) return;
+  const handleTouchEnd = (e) => {
+    if (!dragging.current || isAnimating || e.target.closest(`.${styles.thumbnailBar}`)) return; // 썸네일바에서 스와이프 방지
     dragging.current = false;
     const dx = animOffsets.out;
     if (Math.abs(dx) < threshold) {
-      // 복원
       setAnimOffsets({ out: 0, in: 0 });
       return;
     }
-    // 스와이프와 동일하게 애니메이션 재생
     const dir = dx < 0 ? "next" : "prev";
     startSlide(dir);
   };
