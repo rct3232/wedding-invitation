@@ -97,6 +97,7 @@ export default function Home() {
     );
   }
 
+  console.log("jenkins test");
   return (
     <div>
       <SplashOverlay data={data} />
