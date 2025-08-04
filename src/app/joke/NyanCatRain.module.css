@@ -1,0 +1,15 @@
+.nyanCat {
+  position: fixed;
+  top: 0;
+  z-index: 1000;
+  animation: moveRight linear;
+}
+
+@keyframes moveRight {
+  from {
+    transform: translateX(0); /* Start at the initial position */
+  }
+  to {
+    transform: translateX(var(--end-right)); /* Move off-screen to the right based on width */
+  }
+}
