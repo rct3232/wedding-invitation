@@ -23,14 +23,12 @@ app.prepare().then(() => {
   
   server.use(express.json());
 
-  // Redirect /testpath to /?path=testpath while preserving query string
+  // Redirect /gy28sep2501 to /?path=gy28sep2501 while preserving query string
   server.use((req, res, next) => {
-    const match = req.path.match(/^\/([^/?]+)$/);
-    if (match) {
-      const pathParam = match[1];
+    if (req.path === '/gy28sep2501') {
       const queryString = new URLSearchParams(req.query).toString();
-      const redirectUrl = `/?path=${pathParam}${queryString ? `&${queryString}` : ''}`;
-      console.log(`[${new Date().toISOString()}] [${req.headers['x-forwarded-for']|| req.ip|| req.connection.remoteAddress}]}  redirecting to ${redirectUrl}`);
+      const redirectUrl = `/?path=gy28sep2501${queryString ? `&${queryString}` : ''}`;
+      console.log(`[${new Date().toISOString()}] [${req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress}] redirecting to ${redirectUrl}`);
       return res.redirect(301, redirectUrl);
     }
     next();
