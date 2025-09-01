@@ -19,6 +19,7 @@ import BankAccountAccordion from "./modules/bankAccountAccordion";
 import Guestbook from "./modules/guestbook";
 import BgmPlayer from "./modules/bgmPlayer";
 import useWeddingData from "./modules/useWeddingData";
+import AnnoyingPopup from "./joke/AnnoyingPopup"; // Import the AnnoyingPopup component
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export default function Home() {
   const [isShrink, setIsShrink] = useState(false);
   const [isGradientActive, setIsGradientActive] = useState(false);
   const [hideBankSection, setHideBankSection] = useState(false);
-  // Removed currentPileSize state
+  const [showAnnoyingPopup, setShowAnnoyingPopup] = useState(false); // State to control AnnoyingPopup visibility
   const [windowSize, setWindowSize] = useState({ width: undefined, height: undefined }); // Keep for new canvas
 
   const containerRef = useRef(null);
@@ -45,18 +46,19 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const modeParam = new URLSearchParams(params).get('mode');
-    if (modeParam){
+    const modeParam = new URLSearchParams(params).get("mode");
+    if (modeParam) {
       try {
         const uriDecoded = decodeURIComponent(modeParam);
         const b64 = uriDecoded.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(uriDecoded.length / 4) * 4, "=");
         console.log(atob(b64));
         if (atob(b64) == "noAccount") setHideBankSection(true);
+        if (atob(b64) == "joke") setShowAnnoyingPopup(true); // Show AnnoyingPopup if modeParam is "joke"
       } catch (e) {
         console.error("base64 decode failed:", e);
       }
     }
-  }, [query]);
+  }, [params]);
 
   useEffect(() => {
     if (data) {
@@ -146,6 +148,8 @@ export default function Home() {
 
         {data.bgmUrl && <BgmPlayer bgmUrl={data.bgmUrl} />}
       </div>
+      {/* Show AnnoyingPopup only if modeParam is "joke" */}
+      {showAnnoyingPopup && <AnnoyingPopup />}
     </div>
   );
 }

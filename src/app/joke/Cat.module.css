@@ -1,0 +1,7 @@
+.cat {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 25vw; /* 25% of the viewport width */
+  z-index: 1000;
+}
