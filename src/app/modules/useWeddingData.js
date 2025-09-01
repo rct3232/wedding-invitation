@@ -8,7 +8,9 @@ const useWeddingData = () => {
   const [params, setParams] = useState(null);
 
   useEffect(() => {
-    const segments = window.location.pathname.split("/").filter(Boolean);
+    const urlParams = new URLSearchParams(window.location.search);
+    const pathParam = urlParams.get("path");
+    const segments = pathParam ? [pathParam] : window.location.pathname.split("/").filter(Boolean);
     const currentQuery = segments[0] || "default";
     setQuery(currentQuery);
 

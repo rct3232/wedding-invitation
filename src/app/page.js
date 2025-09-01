@@ -50,6 +50,7 @@ export default function Home() {
       try {
         const uriDecoded = decodeURIComponent(modeParam);
         const b64 = uriDecoded.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(uriDecoded.length / 4) * 4, "=");
+        console.log(atob(b64));
         if (atob(b64) == "noAccount") setHideBankSection(true);
       } catch (e) {
         console.error("base64 decode failed:", e);

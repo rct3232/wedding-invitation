@@ -5,6 +5,7 @@ const promClient = require('prom-client');
 require('dotenv').config();
 
 const initializeApiRoutes = require('./routes/api'); // Renamed to reflect it's a function
+const { console } = require('inspector');
 
 const port = process.env.PORT || 3100;
 const dev = process.env.NODE_ENV !== 'production';
@@ -21,6 +22,19 @@ app.prepare().then(() => {
   const server = express();
   
   server.use(express.json());
+
+  // Redirect /testpath to /?path=testpath while preserving query string
+  server.use((req, res, next) => {
+    const match = req.path.match(/^\/([^/?]+)$/);
+    if (match) {
+      const pathParam = match[1];
+      const queryString = new URLSearchParams(req.query).toString();
+      const redirectUrl = `/?path=${pathParam}${queryString ? `&${queryString}` : ''}`;
+      console.log(`[${new Date().toISOString()}] [${req.headers['x-forwarded-for']|| req.ip|| req.connection.remoteAddress}]}  redirecting to ${redirectUrl}`);
+      return res.redirect(301, redirectUrl);
+    }
+    next();
+  });
   
   server.use(express.static(path.join(__dirname, 'public')));
   server.all(/^\/_next\/.*/, (req, res) => handle(req, res));
