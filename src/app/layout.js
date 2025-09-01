@@ -1,7 +1,7 @@
 import "./globals.css";
 
-export async function generateMetadata({ searchParams }) {
-  const path = searchParams.path;
+export async function generateMetadata({ params }) {
+  const path = params.path;
 
   try {
     const response = await fetch(`https://invitation.plume7eat.xyz/metadata/${path}.json`);
