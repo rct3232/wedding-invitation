@@ -7,7 +7,7 @@ require('dotenv').config();
 const initializeApiRoutes = require('./routes/api'); // Renamed to reflect it's a function
 const { console } = require('inspector');
 
-const port = process.env.PORT || 3100;
+const port = process.env.PORT || 80;
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
