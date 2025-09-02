@@ -56,7 +56,7 @@ module.exports = function(register) { // register is passed in
     const route = '/data';
     const method = 'GET';
     let { query } = req.params;
-    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: queryLabel });
+    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: query });
     let statusCode = 200;
 
     const jsonFilePath = path.join(__dirname, '..', 'data', 'data.json');
@@ -170,7 +170,7 @@ module.exports = function(register) { // register is passed in
       }
     } finally {
       end();
-      apiRequestsTotal.labels(route, method, statusCode, queryLabel).inc();
+      apiRequestsTotal.labels(route, method, statusCode, query).inc();
     }
   });
 
@@ -179,7 +179,7 @@ module.exports = function(register) { // register is passed in
     const route = '/bgm';
     const method = 'GET';
     let { query } = req.params;
-    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: queryLabel });
+    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: query });
     let statusCode = 200;
 
     const bgmPath = path.join(__dirname, '..', 'data', query, 'bgm.mp3');
@@ -192,14 +192,14 @@ module.exports = function(register) { // register is passed in
             reqLogger(req, 'Error sending BGM file', err.message);
           }
           end();
-          apiRequestsTotal.labels(route, method, statusCode, queryLabel).inc();
+          apiRequestsTotal.labels(route, method, statusCode, query).inc();
         });
       })
       .catch(() => {
         statusCode = 404;
         res.status(404).send('BGM not found');
         end();
-        apiRequestsTotal.labels(route, method, statusCode, queryLabel).inc();
+        apiRequestsTotal.labels(route, method, statusCode, query).inc();
       });
   });
 
@@ -208,7 +208,7 @@ module.exports = function(register) { // register is passed in
     const route = '/image';
     const method = 'GET';
     let { query, image } = req.params;
-    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: queryLabel });
+    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: query });
     let statusCode = 200;
 
     const imagePath = path.join(__dirname, '..', 'data', query, 'full', image);
@@ -220,7 +220,7 @@ module.exports = function(register) { // register is passed in
             reqLogger(req, 'Error sending image file', err.message);
           }
           end();
-          apiRequestsTotal.labels(route, method, statusCode, queryLabel).inc();
+          apiRequestsTotal.labels(route, method, statusCode, query).inc();
         });
       })
       .catch((err) => {
@@ -228,7 +228,7 @@ module.exports = function(register) { // register is passed in
         reqLogger(req, `Error Image not found: ${imagePath}`);
         res.status(404).json({ error: 'Image not found' });
         end();
-        apiRequestsTotal.labels(route, method, statusCode, queryLabel).inc();
+        apiRequestsTotal.labels(route, method, statusCode, query).inc();
       });
   });
 
@@ -237,7 +237,7 @@ module.exports = function(register) { // register is passed in
     const route = '/guestbook/write';
     const method = 'POST';
     let { query } = req.params;
-    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: queryLabel });
+    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: query });
     let statusCode = 200;
 
     const { message, name } = req.body;
@@ -247,7 +247,7 @@ module.exports = function(register) { // register is passed in
       statusCode = 400;
       reqLogger(req, 'Error Missing Name or Message');
       end();
-      apiRequestsTotal.labels(route, method, statusCode, queryLabel).inc();
+      apiRequestsTotal.labels(route, method, statusCode, query).inc();
       return res.status(400).json({ success: false, error: "메시지와 이름을 입력해야 합니다." });
     }
 
@@ -274,7 +274,7 @@ module.exports = function(register) { // register is passed in
       res.status(500).json({ success: false, error: '서버 내부 에러가 발생했습니다.' });
     } finally {
       end();
-      apiRequestsTotal.labels(route, method, statusCode, queryLabel).inc();
+      apiRequestsTotal.labels(route, method, statusCode, query).inc();
     }
   });
 
@@ -283,7 +283,7 @@ module.exports = function(register) { // register is passed in
     const route = '/guestbook/read';
     const method = 'GET';
     let { query } = req.params;
-    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: queryLabel });
+    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: query });
     let statusCode = 200;
 
     const guestbookFilePath = path.join(__dirname, '..', 'data', 'guestbook.json');
