@@ -22,17 +22,6 @@ app.prepare().then(() => {
   const server = express();
   
   server.use(express.json());
-
-  // Redirect /gy28sep2501 to /?path=gy28sep2501 while preserving query string
-  server.use((req, res, next) => {
-    if (req.path === '/gy28sep2501') {
-      const queryString = new URLSearchParams(req.query).toString();
-      const redirectUrl = `/?path=gy28sep2501${queryString ? `&${queryString}` : ''}`;
-      console.log(`[${new Date().toISOString()}] [${req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress}] redirecting to ${redirectUrl}`);
-      return res.redirect(301, redirectUrl);
-    }
-    next();
-  });
   
   server.use(express.static(path.join(__dirname, 'public')));
   server.all(/^\/_next\/.*/, (req, res) => handle(req, res));

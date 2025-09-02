@@ -53,11 +53,8 @@ module.exports = function(register) { // register is passed in
     const route = '/data';
     const method = 'GET';
     let { query } = req.params;
-    const queryLabel = query === "default" ? 'gy28sep2501' : query;
     const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: queryLabel });
     let statusCode = 200;
-
-    if (query == "default") query = 'gy28sep2501';
 
     const jsonFilePath = path.join(__dirname, '..', 'data', 'data.json');
     const folderPath = path.join(__dirname, '..', 'data', query, 'full');
@@ -179,11 +176,8 @@ module.exports = function(register) { // register is passed in
     const route = '/bgm';
     const method = 'GET';
     let { query } = req.params;
-    const queryLabel = query === "default" ? 'gy28sep2501' : query;
     const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: queryLabel });
     let statusCode = 200;
-
-    if (query === 'default') query = 'gy28sep2501';
 
     const bgmPath = path.join(__dirname, '..', 'data', query, 'bgm.mp3');
     fs.access(bgmPath)
@@ -211,11 +205,8 @@ module.exports = function(register) { // register is passed in
     const route = '/image';
     const method = 'GET';
     let { query, image } = req.params;
-    const queryLabel = query === "default" ? 'gy28sep2501' : query;
     const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: queryLabel });
     let statusCode = 200;
-
-    if (query === "default") query = 'gy28sep2501';
 
     const imagePath = path.join(__dirname, '..', 'data', query, 'full', image);
     fs.access(imagePath, fs.constants.F_OK)
@@ -243,13 +234,11 @@ module.exports = function(register) { // register is passed in
     const route = '/guestbook/write';
     const method = 'POST';
     let { query } = req.params;
-    const queryLabel = query === "default" ? 'gy28sep2501' : query;
     const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: queryLabel });
     let statusCode = 200;
 
     const { message, name } = req.body;
     reqLogger(req, `Name: ${name} / Message: ${message}`);
-    if (query === "default") query = 'gy28sep2501';
 
     if (!message || !name) {
       statusCode = 400;
@@ -291,11 +280,8 @@ module.exports = function(register) { // register is passed in
     const route = '/guestbook/read';
     const method = 'GET';
     let { query } = req.params;
-    const queryLabel = query === "default" ? 'gy28sep2501' : query;
     const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: queryLabel });
     let statusCode = 200;
-
-    if (query === 'default') query = 'gy28sep2501';
 
     const guestbookFilePath = path.join(__dirname, '..', 'data', 'guestbook.json');
     try {

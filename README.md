@@ -183,4 +183,4 @@ params을 입력하여 청첩장 페이지의 기능을 사용할 수 있습니�
 ### Additional Notes
 TO-BE: query string이 아닌 url params으로 분기할 수 있도록 수정 개발 예정
 
-제작자 청첩장: https://invitation.plume7eat.xyz/gy28sep2501
+제작자 청첩장: https://invitation.plume7eat.xyz/?path=gy28sep2501

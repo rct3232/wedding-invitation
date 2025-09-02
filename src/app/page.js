@@ -19,7 +19,6 @@ import BankAccountAccordion from "./modules/bankAccountAccordion";
 import Guestbook from "./modules/guestbook";
 import BgmPlayer from "./modules/bgmPlayer";
 import useWeddingData from "./modules/useWeddingData";
-import AnnoyingPopup from "./joke/AnnoyingPopup"; // Import the AnnoyingPopup component
 
 export const dynamic = "force-dynamic";
 
@@ -28,8 +27,7 @@ export default function Home() {
   const [isShrink, setIsShrink] = useState(false);
   const [isGradientActive, setIsGradientActive] = useState(false);
   const [hideBankSection, setHideBankSection] = useState(false);
-  const [showAnnoyingPopup, setShowAnnoyingPopup] = useState(false); // State to control AnnoyingPopup visibility
-  const [windowSize, setWindowSize] = useState({ width: undefined, height: undefined }); // Keep for new canvas
+  const [windowSize, setWindowSize] = useState({ width: undefined, height: undefined });
 
   const containerRef = useRef(null);
 
@@ -53,7 +51,6 @@ export default function Home() {
         const b64 = uriDecoded.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(uriDecoded.length / 4) * 4, "=");
         console.log(atob(b64));
         if (atob(b64) == "noAccount") setHideBankSection(true);
-        if (atob(b64) == "joke") setShowAnnoyingPopup(true); // Show AnnoyingPopup if modeParam is "joke"
       } catch (e) {
         console.error("base64 decode failed:", e);
       }
@@ -132,10 +129,7 @@ export default function Home() {
             </p>
           </footer>
         </div>
-        {/* Removed Confetti (react-confetti) component */}
-        {/* Removed ConfettiPile component */}
 
-        {/* Add PhysicsConfetti component if data and windowSize are available */}
         {data && data.content && data.content.confetti && windowSize.width && windowSize.height && (
           <PhysicsConfetti
             colors={data.content.confetti.color}
@@ -147,8 +141,6 @@ export default function Home() {
 
         {data.bgmUrl && <BgmPlayer bgmUrl={data.bgmUrl} />}
       </div>
-      {/* Show AnnoyingPopup only if modeParam is "joke" */}
-      {showAnnoyingPopup && <AnnoyingPopup />}
     </div>
   );
 }
