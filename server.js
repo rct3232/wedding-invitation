@@ -5,7 +5,6 @@ const promClient = require('prom-client');
 require('dotenv').config();
 
 const initializeApiRoutes = require('./routes/api'); // Renamed to reflect it's a function
-const { console } = require('inspector');
 
 const port = process.env.PORT || 80;
 const dev = process.env.NODE_ENV !== 'production';
@@ -38,6 +37,18 @@ app.prepare().then(() => {
   
   server.all(/(.*)/, (req, res) => {
     if (!req.path.startsWith('/api')) {
+      if (req.path.startsWith('/share-photo')) {
+        // Extract the `path` parameter from the query string
+        const pathParam = req.query.path; // Get the `path` parameter from the query string
+        console.log(`Extracted pathParam: ${pathParam}`); // Debugging log
+        if (!pathParam) {
+          // Return 404 if the path parameter is missing
+          return res.status(404).send('잘못된 접근입니다');
+        }
+
+        const queryParams = { ...req.query, path: pathParam }; // Pass the path parameter
+        return app.render(req, res, '/share-photo', queryParams);
+      }
       return app.render(req, res, '/', req.query);
     }
     return handle(req, res);

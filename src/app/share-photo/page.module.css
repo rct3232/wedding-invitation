@@ -1,0 +1,155 @@
+.loader {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #dddddd;
+  border-top: 5px solid #d9d4cf;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  flex-grow: 1;
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  gap: 30px;
+  padding: 15svh 20px 20px 20px;
+  background: linear-gradient(
+    to bottom,
+    var(--backgroundTranspernt)00 0%,
+    var(--background) 150px,
+    var(--background) 100%
+  );
+  text-align: center;
+}
+
+.header {
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.galleryContainer {
+  width: 100%;
+  height: 70%; /* Set the height of the container */
+  overflow-y: auto; /* Enable scrolling inside the container */
+  overflow-x: hidden;
+  border: 2px solid var(--foreground); /* Optional: Add a border for the container */
+  border-radius: 2%;
+}
+
+.gallery {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  grid-template-columns: repeat(12, 1fr);
+  justify-content: center;
+  width: 100%; /* Ensure the gallery takes full width of the container */
+}
+
+@media (max-width: 1024px) {
+  .gallery {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .gallery {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.gallery img {
+  width: 100%;
+  height: 100%; /* Ensure the image fills the grid cell completely */
+  aspect-ratio: 1 / 1; /* Enforce a 1:1 aspect ratio */
+  object-fit: cover; /* Crop the image to fit the container */
+}
+
+.addButtonContainer {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--backgroundTranspernt)00 50%;
+  border: 2px dashed var(--background);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.addButton {
+  width: 50%;
+  height: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid var(--background);
+  border-radius: 50%;
+  font-size: 24px;
+  color: var(--foreground);
+  background-color: var(--background);
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.detail {
+  position: relative;
+  transition: background-color 0.3s ease;
+}
+
+.detail.hovered {
+  background-color: var(--foregroundTranspernt)00 80%; /* Darken the photo */
+}
+
+.detail img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  transition: opacity 0.3s ease;
+}
+
+.detail.hovered img {
+  opacity: 0.7; /* Dim the image */
+}
+
+.removeButton {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* Center the X */
+  background: none; /* Remove background */
+  color: white; /* White X */
+  border: none; /* Remove border */
+  font-size: 32px; /* Larger X */
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 1; /* Ensure it appears above the image */
+}
+
+.removeButton:hover {
+  color: var(--background); /* Slightly dim the X on hover */
+}
+
+.duplicate {
+  border: 3px solid rgba(255, 165, 0, 0.8); /* Dark yellow border */
+}
+
+.darkened {
+  filter: brightness(50%); /* Darken the image */
+}

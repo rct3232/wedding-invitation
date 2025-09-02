@@ -1,10 +1,10 @@
 import "./globals.css";
 
 export async function generateMetadata({ params }) {
-  const path = params.path;
+  const path = params.path === undefined ? "fallback" : params.path;
 
   try {
-    const response = await fetch(`/metadata/${path}.json`);
+    const response = await fetch(`http://localhost:${process.env.PORT}/metadata/${path}.json`);
     const data = await response.json();
 
     return {

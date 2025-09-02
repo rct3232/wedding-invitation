@@ -2,6 +2,9 @@ const express = require('express');
 const fs = require('fs').promises;
 const path = require('path');
 const promClient = require('prom-client');
+const multer = require("multer");
+const fsSync = require("fs");
+const crypto = require('crypto');
 
 module.exports = function(register) { // register is passed in
   const router = express.Router();
@@ -299,7 +302,106 @@ module.exports = function(register) { // register is passed in
       }
     } finally {
       end();
-      apiRequestsTotal.labels(route, method, statusCode, queryLabel).inc();
+      apiRequestsTotal.labels(route, method, statusCode, query).inc();
+    }
+  });
+
+  // POST route to handle chunked photo uploads
+  router.post("/photo-upload/:query", async (req, res) => {
+    const query = req.params.query;
+    if (!query) {
+      reqLogger(req, 'Query parameter is required');
+      return res.status(400).json({ message: "Query parameter is required" });
+    }
+
+    const uploadDir = path.join(__dirname, "../data/", query, "/uploads");
+    const hashFilePath = path.join(__dirname, "../data/uploadhash.json");
+
+    if (!fsSync.existsSync(uploadDir)) {
+      fsSync.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    let uploadHash = {};
+    try {
+      const hashFileContent = await fs.readFile(hashFilePath, 'utf8');
+      uploadHash = JSON.parse(hashFileContent);
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        reqLogger(req, "Error reading uploadhash.json:", err);
+        return res.status(500).json({ message: "Failed to read upload hash file" });
+      }
+    }
+
+    if (!uploadHash[query]) {
+      uploadHash[query] = {};
+    }
+
+    const storage = multer.diskStorage({
+      destination: (req, file, cb) => {
+        cb(null, uploadDir);
+      },
+      filename: (req, file, cb) => {
+        const fileCount = Object.keys(uploadHash[query]).length;
+        const newFileName = `${fileCount + Object.keys(req.files || {}).length}.jpg`; // Ensure unique filenames
+        cb(null, newFileName);
+      },
+    });
+
+    const upload = multer({ storage }).array("photos", 10);
+
+    upload(req, res, async (err) => {
+      if (err) {
+        reqLogger(req, 'Error uploading chunk', err);
+        return res.status(500).json({ message: "Failed to upload chunk" });
+      }
+
+      try {
+        for (const file of req.files) {
+          const fileBuffer = await fs.readFile(file.path);
+          const hash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+          uploadHash[query][file.filename] = hash; // Save file ID and hash
+        }
+
+        await fs.writeFile(hashFilePath, JSON.stringify(uploadHash, null, 2));
+        res.status(200).json({
+          message: "Chunk uploaded successfully",
+          files: req.files.map((file) => ({
+            id: file.filename,
+            hash: uploadHash[query][file.filename],
+          })),
+        });
+      } catch (error) {
+        reqLogger(req, "Error processing uploaded files:", error);
+        res.status(500).json({ message: "Failed to process uploaded files" });
+      }
+    });
+  });
+
+  // GET route to fetch photo hashes
+  router.get("/photo-hashes/:query", async (req, res) => {
+    const query = req.params.query;
+    if (!query) {
+      return res.status(400).json({ message: "Query parameter is required" });
+    }
+
+    const hashFilePath = path.join(__dirname, "../data/uploadhash.json");
+
+    try {
+      const hashFileContent = await fs.readFile(hashFilePath, "utf8");
+      const uploadHash = JSON.parse(hashFileContent);
+
+      if (!uploadHash[query]) {
+        return res.status(200).json({ hashes: [] });
+      }
+
+      const hashes = Object.values(uploadHash[query]);
+      res.status(200).json({ hashes });
+    } catch (err) {
+      if (err.code === "ENOENT") {
+        return res.status(200).json({ hashes: [] });
+      }
+      console.error("Error reading uploadhash.json:", err);
+      res.status(500).json({ message: "Failed to read upload hash file" });
     }
   });
 
