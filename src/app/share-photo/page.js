@@ -34,11 +34,6 @@ export default function SharePhotoPage() {
           handleFileChange={handleFileChange}
         />
       </div>
-      {duplicateFiles.length > 0 && (
-        <div className="little">
-          중복된 사진은 서버로 전송되지 않습니다. 중복된 사진: {duplicateFiles.length}개
-        </div>
-      )}
       {selectedFiles.length > 0 && <UploadButton handleUpload={handleUpload} />}
     </div>
   );
