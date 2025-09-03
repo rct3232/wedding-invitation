@@ -85,8 +85,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: var(--backgroundTranspernt)00 50%;
-  border: 2px dashed var(--background);
+  background-color: #dddddd;
+  border: 2px #dddddd;
   border-radius: 10px;
   cursor: pointer;
 }
@@ -152,4 +152,17 @@
 
 .darkened {
   filter: brightness(50%); /* Darken the image */
+}
+
+.submit {
+  text-decoration: underline;
+  font-size: 14px;
+  font-weight: bold;
+  outline: none;
+  border: none;
+  display: block;
+  margin: 20px auto;
+  cursor: pointer;
+  background-color: transparent !important;
+  -webkit-appearance: none;
 }
