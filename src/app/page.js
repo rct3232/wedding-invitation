@@ -1,143 +1,53 @@
-"use client";
-
-import React, { useState, useEffect, useRef } from "react";
-import styles from "./page.module.css";
-import PhysicsConfetti from "./modules/PhysicsConfetti";
-
-import SplashOverlay from "./modules/splashOverlay";
-import HeaderImage from "./modules/headerImage";
-import Nametag from "./modules/nametag";
-import Greeting from "./modules/greeting";
-import DateCounter from "./modules/dateCounter";
-import HighlightCalendar from "./modules/highlightCalendar";
-import Gallery from "./modules/gallery/gallery";
-import Route from "./modules/route";
-import BankAccountAccordion from "./modules/bankAccountAccordion";
-import Guestbook from "./modules/guestbook";
-import BgmPlayer from "./modules/bgmPlayer";
-import useWeddingData from "./modules/useWeddingData";
+import "./globals.css";
+import ClientPage from './client';
 
 export const dynamic = "force-dynamic";
 
-export default function Home() {
-  const { data, query, params } = useWeddingData();
-  const [isShrink, setIsShrink] = useState(false);
-  const [isGradientActive, setIsGradientActive] = useState(false);
-  const [hideBankSection, setHideBankSection] = useState(false);
-  const [windowSize, setWindowSize] = useState({ width: undefined, height: undefined });
+export async function generateMetadata({ searchParams }) {
+  const path = searchParams?.path;
+  try {
+    const response = await fetch(`${process.env.SERVICE_URL}/metadata.json`);
+    const data = await response.json()[path];
 
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    function handleResize() {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    }
-    window.addEventListener("resize", handleResize);
-    handleResize();
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
-    const modeParam = new URLSearchParams(params).get("mode");
-    if (modeParam) {
-      try {
-        const uriDecoded = decodeURIComponent(modeParam);
-        const b64 = uriDecoded.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(uriDecoded.length / 4) * 4, "=");
-        console.log(atob(b64));
-        if (atob(b64) == "noAccount") setHideBankSection(true);
-      } catch (e) {
-        console.error("base64 decode failed:", e);
-      }
-    }
-  }, [params]);
-
-  useEffect(() => {
-    if (data) {
-      window.scrollTo(0, 0);
-      if (containerRef.current) containerRef.current.scrollTop = 0;
-    }
-  }, [data]);
-
-  const handleScroll = () => {
-    if (containerRef.current) {
-      const scrollTop = containerRef.current.scrollTop;
-      const baseThreshold =
-        window.innerWidth <= 600 ? window.innerHeight : 525;
-      const margin = 66;
-      const shrinkThreshold = baseThreshold;
-      const releaseThreshold = baseThreshold - margin;
-
-      if (!isShrink && scrollTop >= shrinkThreshold) {
-        setIsShrink(true);
-      } else if (isShrink && scrollTop <= releaseThreshold) {
-        setIsShrink(false);
-      }
-
-      const gradientThreshold =
-        window.innerWidth <= 600 ? window.innerHeight : 525;
-      if (!isGradientActive && scrollTop >= gradientThreshold) {
-        setIsGradientActive(true);
-      } else if (isGradientActive && scrollTop < gradientThreshold) {
-        setIsGradientActive(false);
-      }
-    }
-  };
-
-  if (!data) {
-    return (
-      <div className={styles.loaderWrapper}>
-        <div className={styles.loader}></div>
-      </div>
-    );
+    return {
+      title: data.title,
+      description: data.description,
+      openGraph: {
+        title: data.title,
+        description: data.description,
+        url: `${process.env.SERVICE_URL}/?path=${path}`,
+        type: data.openGraph?.type,
+        images: {
+          url: `${process.env.SERVICE_URL}/meta_${path}.jpg`,
+          width: 1200,
+          height: 630,
+          alt: "모바일 청첩장"
+        }
+      },
+    };
+  } catch (error) {
+    console.error("Failed to fetch metadata:", error);
+    return {
+      title: "모바일 청첩장",
+      description: "데이터 불러오기 실패",
+      openGraph: {
+        title: "모바일 청첩장",
+        description: "데이터 불러오기 실패",
+        url: process.env.SERVICE_URL,
+        type: "website",
+        images: [
+          {
+            url: `${process.env.SERVICE_URL}/meta_fallback.jpg`,
+            width: 1200,
+            height: 630,
+            alt: "모바일 청첩장",
+          },
+        ],
+      },
+    };
   }
+}
 
-  return (
-    <div>
-      <SplashOverlay data={data} />
-      <div className={styles.page}>
-        <HeaderImage header={data.header} />
-        <div className={styles.container} ref={containerRef} onScroll={handleScroll}>
-          <Nametag data={data} isShrink={isShrink} isGradientActive={isGradientActive} />
-          <div className={styles.headercover} />
-          <main className={styles.main}>
-            <div className={styles.divider} />
-            <Greeting greeting={data.content.greeting} relation={data.relation} />
-            <div className={styles.divider} />
-            <DateCounter date={data.content.date} />
-            <HighlightCalendar selectedDate={data.content.date} />
-            <Gallery fullImages={data.galleryImage.fullImages} thumbImages={data.images} query={query} />
-            <div className={styles.divider} />
-            <Route placeInfo={data.place}/>
-            {!hideBankSection && (
-              <>
-                <div className={styles.divider} />
-                <BankAccountAccordion accountInfo={data.account} />
-              </>
-            )}
-            <div className={styles.divider} />
-            <Guestbook query={query} date={data.content.date} />
-          </main>
-          <footer className={styles.footer}>
-            <p style={{ color: "white", fontSize: "xx-small", textAlign: "center", }}>
-              e-mail: rct3232@gmail.com
-            </p>
-          </footer>
-        </div>
-
-        {data && data.content && data.content.confetti && windowSize.width && windowSize.height && (
-          <PhysicsConfetti
-            colors={data.content.confetti.color}
-            shapeSVGPath={data.content.confetti.shape}
-            canvasWidth={windowSize.width}
-            canvasHeight={windowSize.height}
-          />
-        )}
-
-        {data.bgmUrl && <BgmPlayer bgmUrl={data.bgmUrl} />}
-      </div>
-    </div>
-  );
+export default function Home() {
+  return <ClientPage />;
 }
