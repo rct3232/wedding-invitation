@@ -4,7 +4,7 @@ export async function generateMetadata({ params }) {
   const path = params.path === undefined ? "fallback" : params.path;
 
   try {
-    const response = await fetch(`https://invitation.plume7eat.xyz/metadata/${path}.json`);
+    const response = await fetch(`https://invitation.plume7eat.xyz/meta_${path}.json`);
     const data = await response.json();
 
     return {
