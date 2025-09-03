@@ -2,6 +2,9 @@ const express = require('express');
 const fs = require('fs').promises;
 const path = require('path');
 const promClient = require('prom-client');
+const multer = require("multer");
+const fsSync = require("fs");
+const crypto = require('crypto');
 
 module.exports = function(register) { // register is passed in
   const router = express.Router();
@@ -53,11 +56,8 @@ module.exports = function(register) { // register is passed in
     const route = '/data';
     const method = 'GET';
     let { query } = req.params;
-    const queryLabel = query === "default" ? 'gy28sep2501' : query;
-    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: queryLabel });
+    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: query });
     let statusCode = 200;
-
-    if (query == "default") query = 'gy28sep2501';
 
     const jsonFilePath = path.join(__dirname, '..', 'data', 'data.json');
     const folderPath = path.join(__dirname, '..', 'data', query, 'full');
@@ -170,7 +170,7 @@ module.exports = function(register) { // register is passed in
       }
     } finally {
       end();
-      apiRequestsTotal.labels(route, method, statusCode, queryLabel).inc();
+      apiRequestsTotal.labels(route, method, statusCode, query).inc();
     }
   });
 
@@ -179,11 +179,8 @@ module.exports = function(register) { // register is passed in
     const route = '/bgm';
     const method = 'GET';
     let { query } = req.params;
-    const queryLabel = query === "default" ? 'gy28sep2501' : query;
-    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: queryLabel });
+    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: query });
     let statusCode = 200;
-
-    if (query === 'default') query = 'gy28sep2501';
 
     const bgmPath = path.join(__dirname, '..', 'data', query, 'bgm.mp3');
     fs.access(bgmPath)
@@ -195,14 +192,14 @@ module.exports = function(register) { // register is passed in
             reqLogger(req, 'Error sending BGM file', err.message);
           }
           end();
-          apiRequestsTotal.labels(route, method, statusCode, queryLabel).inc();
+          apiRequestsTotal.labels(route, method, statusCode, query).inc();
         });
       })
       .catch(() => {
         statusCode = 404;
         res.status(404).send('BGM not found');
         end();
-        apiRequestsTotal.labels(route, method, statusCode, queryLabel).inc();
+        apiRequestsTotal.labels(route, method, statusCode, query).inc();
       });
   });
 
@@ -211,11 +208,8 @@ module.exports = function(register) { // register is passed in
     const route = '/image';
     const method = 'GET';
     let { query, image } = req.params;
-    const queryLabel = query === "default" ? 'gy28sep2501' : query;
-    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: queryLabel });
+    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: query });
     let statusCode = 200;
-
-    if (query === "default") query = 'gy28sep2501';
 
     const imagePath = path.join(__dirname, '..', 'data', query, 'full', image);
     fs.access(imagePath, fs.constants.F_OK)
@@ -226,7 +220,7 @@ module.exports = function(register) { // register is passed in
             reqLogger(req, 'Error sending image file', err.message);
           }
           end();
-          apiRequestsTotal.labels(route, method, statusCode, queryLabel).inc();
+          apiRequestsTotal.labels(route, method, statusCode, query).inc();
         });
       })
       .catch((err) => {
@@ -234,7 +228,7 @@ module.exports = function(register) { // register is passed in
         reqLogger(req, `Error Image not found: ${imagePath}`);
         res.status(404).json({ error: 'Image not found' });
         end();
-        apiRequestsTotal.labels(route, method, statusCode, queryLabel).inc();
+        apiRequestsTotal.labels(route, method, statusCode, query).inc();
       });
   });
 
@@ -243,19 +237,17 @@ module.exports = function(register) { // register is passed in
     const route = '/guestbook/write';
     const method = 'POST';
     let { query } = req.params;
-    const queryLabel = query === "default" ? 'gy28sep2501' : query;
-    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: queryLabel });
+    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: query });
     let statusCode = 200;
 
     const { message, name } = req.body;
     reqLogger(req, `Name: ${name} / Message: ${message}`);
-    if (query === "default") query = 'gy28sep2501';
 
     if (!message || !name) {
       statusCode = 400;
       reqLogger(req, 'Error Missing Name or Message');
       end();
-      apiRequestsTotal.labels(route, method, statusCode, queryLabel).inc();
+      apiRequestsTotal.labels(route, method, statusCode, query).inc();
       return res.status(400).json({ success: false, error: "메시지와 이름을 입력해야 합니다." });
     }
 
@@ -282,7 +274,7 @@ module.exports = function(register) { // register is passed in
       res.status(500).json({ success: false, error: '서버 내부 에러가 발생했습니다.' });
     } finally {
       end();
-      apiRequestsTotal.labels(route, method, statusCode, queryLabel).inc();
+      apiRequestsTotal.labels(route, method, statusCode, query).inc();
     }
   });
 
@@ -291,11 +283,8 @@ module.exports = function(register) { // register is passed in
     const route = '/guestbook/read';
     const method = 'GET';
     let { query } = req.params;
-    const queryLabel = query === "default" ? 'gy28sep2501' : query;
-    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: queryLabel });
+    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: query });
     let statusCode = 200;
-
-    if (query === 'default') query = 'gy28sep2501';
 
     const guestbookFilePath = path.join(__dirname, '..', 'data', 'guestbook.json');
     try {
@@ -313,7 +302,106 @@ module.exports = function(register) { // register is passed in
       }
     } finally {
       end();
-      apiRequestsTotal.labels(route, method, statusCode, queryLabel).inc();
+      apiRequestsTotal.labels(route, method, statusCode, query).inc();
+    }
+  });
+
+  // POST route to handle chunked photo uploads
+  router.post("/photo-upload/:query", async (req, res) => {
+    const query = req.params.query;
+    if (!query) {
+      reqLogger(req, 'Query parameter is required');
+      return res.status(400).json({ message: "Query parameter is required" });
+    }
+
+    const uploadDir = path.join(__dirname, "../data/", query, "/uploads");
+    const hashFilePath = path.join(__dirname, "../data/uploadhash.json");
+
+    if (!fsSync.existsSync(uploadDir)) {
+      fsSync.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    let uploadHash = {};
+    try {
+      const hashFileContent = await fs.readFile(hashFilePath, 'utf8');
+      uploadHash = JSON.parse(hashFileContent);
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        reqLogger(req, "Error reading uploadhash.json:", err);
+        return res.status(500).json({ message: "Failed to read upload hash file" });
+      }
+    }
+
+    if (!uploadHash[query]) {
+      uploadHash[query] = {};
+    }
+
+    const storage = multer.diskStorage({
+      destination: (req, file, cb) => {
+        cb(null, uploadDir);
+      },
+      filename: (req, file, cb) => {
+        const fileCount = Object.keys(uploadHash[query]).length;
+        const newFileName = `${fileCount + Object.keys(req.files || {}).length}.jpg`; // Ensure unique filenames
+        cb(null, newFileName);
+      },
+    });
+
+    const upload = multer({ storage }).array("photos", 10);
+
+    upload(req, res, async (err) => {
+      if (err) {
+        reqLogger(req, 'Error uploading chunk', err);
+        return res.status(500).json({ message: "Failed to upload chunk" });
+      }
+
+      try {
+        for (const file of req.files) {
+          const fileBuffer = await fs.readFile(file.path);
+          const hash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+          uploadHash[query][file.filename] = hash; // Save file ID and hash
+        }
+
+        await fs.writeFile(hashFilePath, JSON.stringify(uploadHash, null, 2));
+        res.status(200).json({
+          message: "Chunk uploaded successfully",
+          files: req.files.map((file) => ({
+            id: file.filename,
+            hash: uploadHash[query][file.filename],
+          })),
+        });
+      } catch (error) {
+        reqLogger(req, "Error processing uploaded files:", error);
+        res.status(500).json({ message: "Failed to process uploaded files" });
+      }
+    });
+  });
+
+  // GET route to fetch photo hashes
+  router.get("/photo-hashes/:query", async (req, res) => {
+    const query = req.params.query;
+    if (!query) {
+      return res.status(400).json({ message: "Query parameter is required" });
+    }
+
+    const hashFilePath = path.join(__dirname, "../data/uploadhash.json");
+
+    try {
+      const hashFileContent = await fs.readFile(hashFilePath, "utf8");
+      const uploadHash = JSON.parse(hashFileContent);
+
+      if (!uploadHash[query]) {
+        return res.status(200).json({ hashes: [] });
+      }
+
+      const hashes = Object.values(uploadHash[query]);
+      res.status(200).json({ hashes });
+    } catch (err) {
+      if (err.code === "ENOENT") {
+        return res.status(200).json({ hashes: [] });
+      }
+      console.error("Error reading uploadhash.json:", err);
+      res.status(500).json({ message: "Failed to read upload hash file" });
     }
   });
 

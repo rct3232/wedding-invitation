@@ -1,10 +1,10 @@
 import "./globals.css";
 
 export async function generateMetadata({ params }) {
-  const path = params.path;
+  const path = params.path === undefined ? "fallback" : params.path;
 
   try {
-    const response = await fetch(`https://invitation.plume7eat.xyz/metadata/${path}.json`);
+    const response = await fetch(`http://localhost:${process.env.PORT}/metadata/${path}.json`);
     const data = await response.json();
 
     return {
@@ -25,12 +25,12 @@ export async function generateMetadata({ params }) {
       description: "모바일 청첩장",
       openGraph: {
         title: "모바일 청첩장",
-        description: "박기웅과 권유진의 결혼식에 초대합니다.",
-        url: "https://invitation.plume7eat.xyz/gy28sep2501",
+        description: "김철수와 이영희의의 결혼식에 초대합니다.",
+        url: "https://your-wedding-invitation-url.com",
         type: "website",
         images: [
           {
-            url: "https://invitation.plume7eat.xyz/metadata/gy28sep2501.jpg",
+            url: "https://your-wedding-invitation-url.com/fallbackHeader.jpg",
             width: 1200,
             height: 630,
             alt: "모바일 청첩장",

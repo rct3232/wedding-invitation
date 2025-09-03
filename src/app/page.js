@@ -1,15 +1,12 @@
-// page.js
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import styles from "./page.module.css";
-import PhysicsConfetti from "./modules/PhysicsConfetti"; // Import the new confetti component
+import PhysicsConfetti from "./modules/PhysicsConfetti";
 
 import SplashOverlay from "./modules/splashOverlay";
-// Removed ConfettiPile import
 import HeaderImage from "./modules/headerImage";
 import Nametag from "./modules/nametag";
-// Removed react-confetti import, will be replaced by PhysicsConfetti later
 import Greeting from "./modules/greeting";
 import DateCounter from "./modules/dateCounter";
 import HighlightCalendar from "./modules/highlightCalendar";
@@ -29,7 +26,7 @@ export default function Home() {
   const [isGradientActive, setIsGradientActive] = useState(false);
   const [hideBankSection, setHideBankSection] = useState(false);
   const [showAnnoyingPopup, setShowAnnoyingPopup] = useState(false); // State to control AnnoyingPopup visibility
-  const [windowSize, setWindowSize] = useState({ width: undefined, height: undefined }); // Keep for new canvas
+  const [windowSize, setWindowSize] = useState({ width: undefined, height: undefined });
 
   const containerRef = useRef(null);
 
@@ -41,7 +38,7 @@ export default function Home() {
       });
     }
     window.addEventListener("resize", handleResize);
-    handleResize(); // Call handler right away so state is updated with initial window size
+    handleResize();
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -125,6 +122,26 @@ export default function Home() {
             )}
             <div className={styles.divider} />
             <Guestbook query={query} />
+            {new Date(data.content.date) < new Date() && ( // Only show the button if the date is in the past
+              <div>
+                <div className={styles.divider} />
+                <button
+                  className="content"
+                  onClick={() => {
+                    const urlParams = new URLSearchParams(window.location.search); // Extract query parameters from the URL
+                    const pathParam = urlParams.get("path"); // Get the `path` parameter
+
+                    if (pathParam) {
+                      window.open(`/share-photo?path=${encodeURIComponent(pathParam)}`, "_blank"); // Open with path param
+                    } else {
+                      alert("잘못된 접근입니다!"); // Notify the user if the path is not available
+                    }
+                  }}
+                >
+                  Share Photos
+                </button>
+              </div>
+            )}
           </main>
           <footer className={styles.footer}>
             <p style={{ color: "white", fontSize: "xx-small", textAlign: "center", }}>
@@ -132,10 +149,7 @@ export default function Home() {
             </p>
           </footer>
         </div>
-        {/* Removed Confetti (react-confetti) component */}
-        {/* Removed ConfettiPile component */}
 
-        {/* Add PhysicsConfetti component if data and windowSize are available */}
         {data && data.content && data.content.confetti && windowSize.width && windowSize.height && (
           <PhysicsConfetti
             colors={data.content.confetti.color}
@@ -147,7 +161,6 @@ export default function Home() {
 
         {data.bgmUrl && <BgmPlayer bgmUrl={data.bgmUrl} />}
       </div>
-      {/* Show AnnoyingPopup only if modeParam is "joke" */}
       {showAnnoyingPopup && <AnnoyingPopup />}
     </div>
   );
