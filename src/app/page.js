@@ -121,27 +121,7 @@ export default function Home() {
               </>
             )}
             <div className={styles.divider} />
-            <Guestbook query={query} />
-            {new Date(data.content.date) < new Date() && ( // Only show the button if the date is in the past
-              <div>
-                <div className={styles.divider} />
-                <button
-                  className="content"
-                  onClick={() => {
-                    const urlParams = new URLSearchParams(window.location.search); // Extract query parameters from the URL
-                    const pathParam = urlParams.get("path"); // Get the `path` parameter
-
-                    if (pathParam) {
-                      window.open(`/share-photo?path=${encodeURIComponent(pathParam)}`, "_blank"); // Open with path param
-                    } else {
-                      alert("잘못된 접근입니다!"); // Notify the user if the path is not available
-                    }
-                  }}
-                >
-                  Share Photos
-                </button>
-              </div>
-            )}
+            <Guestbook query={query} date={data.content.date} />
           </main>
           <footer className={styles.footer}>
             <p style={{ color: "white", fontSize: "xx-small", textAlign: "center", }}>

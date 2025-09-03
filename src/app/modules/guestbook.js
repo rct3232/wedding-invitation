@@ -5,7 +5,7 @@ import styles from './guestbook.module.css'
 import { ToastContainer, toast, Slide } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
-const Guestbook = ({ query }) => {
+const Guestbook = ({ query, date }) => {
   const [inputMessage, setInputMessage] = useState('')
   const [inputName, setInputName]       = useState('')
   const [entries, setEntries]   = useState([])
@@ -124,6 +124,27 @@ const Guestbook = ({ query }) => {
           등록
         </button>
       </form>
+      
+      {date < new Date() && ( // Only show the button if the date is in the past
+        <div>
+          <button
+            className={styles.submit}
+            style={{fontSize: "xx-large"}}
+            onClick={() => {
+              const urlParams = new URLSearchParams(window.location.search); // Extract query parameters from the URL
+              const pathParam = urlParams.get("path"); // Get the `path` parameter
+
+              if (pathParam) {
+                window.open(`/share-photo?path=${encodeURIComponent(pathParam)}`, "_blank"); // Open with path param
+              } else {
+                window.open(`/share-photo`, "_blank"); // Notify the user if the path is not available
+              }
+            }}
+          >
+            사진 공유하기
+          </button>
+        </div>
+      )}
 
       <div className={styles.wrapper}>
         {entries.length > 0 && (

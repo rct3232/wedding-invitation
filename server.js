@@ -45,23 +45,26 @@ app.prepare().then(() => {
   // Initialize API routes with the registry
   const apiRouter = initializeApiRoutes(register);
   server.use('/api', apiRouter);
+
+  // Route for /share-photo
+  server.get('/share-photo', (req, res) => {
+    const pathParam = req.query.path;
+    if (!pathParam) {
+      res.statusCode = 404;
+      return app.render(req, res, '/_error', { statusCode: 404 });
+    }
+
+    const queryParams = { ...req.query, path: pathParam }; // Pass the path parameter
+    return app.render(req, res, '/share-photo', queryParams);
+  });
   
   server.all(/(.*)/, (req, res) => {
-    if (!req.path.startsWith('/api')) {
-      if (req.path.startsWith('/share-photo')) {
-        // Extract the `path` parameter from the query string
-        const pathParam = req.query.path; // Get the `path` parameter from the query string
-        console.log(`Extracted pathParam: ${pathParam}`); // Debugging log
-        if (!pathParam) {
-          // Return 404 if the path parameter is missing
-          return res.status(404).send('잘못된 접근입니다');
-        }
-
-        const queryParams = { ...req.query, path: pathParam }; // Pass the path parameter
-        return app.render(req, res, '/share-photo', queryParams);
-      }
-      return app.render(req, res, '/', req.query);
+    const pathParam = req.query.path;
+    if (!pathParam) {
+      res.statusCode = 404;
+      return app.render(req, res, '/_error', { statusCode: 404 });
     }
+    
     return handle(req, res);
   });
   
