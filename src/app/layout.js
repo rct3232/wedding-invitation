@@ -25,12 +25,12 @@ export async function generateMetadata({ params }) {
       description: "모바일 청첩장",
       openGraph: {
         title: "모바일 청첩장",
-        description: "김철수와 이영희의의 결혼식에 초대합니다.",
+        description: "박기웅와 권유진의 결혼식에 초대합니다.",
         url: "https://invitation.plume7eat.xyz",
         type: "website",
         images: [
           {
-            url: "https://invitation.plume7eat.xyz/fallbackHeader.jpg",
+            url: "https://invitation.plume7eat.xyz/meta_gy28sep2501.jpg",
             width: 1200,
             height: 630,
             alt: "모바일 청첩장",
