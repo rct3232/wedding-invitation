@@ -4,7 +4,7 @@ import styles from './guestbook.module.css'
 import { ToastContainer, toast, Slide } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
-const Guestbook = ({ query }) => {
+const Guestbook = ({ query, date }) => {
   const [inputMessage, setInputMessage] = useState('')
   const [inputName, setInputName] = useState('')
   const [entries, setEntries] = useState([])
