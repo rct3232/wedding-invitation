@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ searchParams }) {
   const path = searchParams?.path;
   try {
-    const response = await fetch(`http://${process.env.SERVICE_URL}/meta_${path}.json`);
+    const response = await fetch(`${process.env.SERVICE_URL}/meta_${path}.json`);
     const data = await response.json();
 
     return {
