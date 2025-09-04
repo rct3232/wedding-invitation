@@ -3,23 +3,34 @@
 import React, { useRef } from "react";
 import styles from "../page.module.css";
 
-export default function FileInput({ handleFileChange }) {
+export default function FileInput({ handleFileChange, isSelecting }) {
   const fileInputRef = useRef(null);
 
+  const onChange = (event) => {
+    handleFileChange(event);
+  };
+
   return (
-    <div className={styles.addButtonContainer}>
-      <label htmlFor="fileInput" className={styles.addButton}>
-        +
-      </label>
-      <input
-        id="fileInput"
-        type="file"
-        multiple
-        accept="image/*"
-        onChange={handleFileChange}
-        className={styles.hiddenInput}
-        ref={fileInputRef}
-      />
-    </div>
+    <>
+      {isSelecting && (
+        <div className={styles.loadingOverlay}>
+          <div className={styles.spinner}></div>
+        </div>
+      )}
+      <div className={styles.addButtonContainer}>
+        <label htmlFor="fileInput" className={styles.addButton}>
+          <img src="/add-image.png" alt="+" style={{ width: '40%', height: 'auto' }} />
+        </label>
+        <input
+          id="fileInput"
+          type="file"
+          multiple
+          accept="image/*,image/heic"
+          onChange={onChange}
+          className={styles.hiddenInput}
+          ref={fileInputRef}
+        />
+      </div>
+    </>
   );
 }
