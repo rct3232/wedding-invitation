@@ -15,6 +15,8 @@ export default function SharePhotoPage() {
     handleUpload,
     hoveredIndex,
     setHoveredIndex,
+    isUploading,
+    isSelecting, // Add this
   } = usePhotoUpload();
 
   const handleResetHover = () => setHoveredIndex(null);
@@ -32,6 +34,7 @@ export default function SharePhotoPage() {
           setHoveredIndex={setHoveredIndex}
           handleRemovePhoto={handleRemovePhoto}
           handleFileChange={handleFileChange}
+          isSelecting={isSelecting} // Pass down
         />
       </div>
       {duplicateFiles.length > 0 && (
@@ -39,7 +42,9 @@ export default function SharePhotoPage() {
           중복된 사진은 서버로 전송되지 않습니다. 중복된 사진: {duplicateFiles.length}개
         </div>
       )}
-      {selectedFiles.length > 0 && <UploadButton handleUpload={handleUpload} />}
+      {selectedFiles.length > 0 && (
+        <UploadButton handleUpload={handleUpload} isUploading={isUploading} />
+      )}
     </div>
   );
 }
