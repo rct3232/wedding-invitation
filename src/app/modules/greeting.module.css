@@ -22,5 +22,6 @@
 
 .detail {
   display: grid;
+  /* grid-template-columns는 greeting.js에서 inline style로 생성 */
   column-gap: 4px;
 }

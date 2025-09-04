@@ -3,6 +3,7 @@ import styles from "./nametag.module.css";
 const dayOfWeek = ["일", "월", "화", "수", "목", "금", "토"];
 
 const Nametag = ({ data, isShrink, isGradientActive }) => {
+  // data.content.colorinvert가 1일 경우에만 inline style 적용
   const titleStyle =
     data.content.colorInvert === 1
       ? { color: isShrink ? "var(--foreground)" : "var(--background)" }

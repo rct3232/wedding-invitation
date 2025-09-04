@@ -1,3 +1,4 @@
+// app/modules/guestbook.jsx
 'use client'
 import React, { useState, useEffect, useRef } from 'react'
 import styles from './guestbook.module.css'
@@ -6,13 +7,13 @@ import 'react-toastify/dist/ReactToastify.css'
 
 const Guestbook = ({ query, date }) => {
   const [inputMessage, setInputMessage] = useState('')
-  const [inputName, setInputName] = useState('')
-  const [entries, setEntries] = useState([])
-  const [idx, setIdx] = useState(0)
-  const [fadeState, setFadeState] = useState('in')
-  const pollRef = useRef(null)
-  const timerFadeOutRef = useRef(null)
-  const timerSwitchRef = useRef(null)
+  const [inputName, setInputName]       = useState('')
+  const [entries, setEntries]   = useState([])
+  const [idx, setIdx]           = useState(0)
+  const [fadeState, setFadeState] = useState('in') // 'in' or 'out'
+  const pollRef                = useRef(null)
+  const timerFadeOutRef        = useRef(null)
+  const timerSwitchRef         = useRef(null)
 
   const fallbackEntries = [
     { name: 'error', message: '서버 연결에 실패했습니다.' },
@@ -32,7 +33,8 @@ const Guestbook = ({ query, date }) => {
         setIdx(0)
         setFadeState('in')
       })
-      .catch(() => {
+      .catch((error) => {
+        console.warn("API 호출 에러: ", error);
         setEntries(fallbackEntries)
         setIdx(0)
         setFadeState('in')
@@ -90,9 +92,11 @@ const Guestbook = ({ query, date }) => {
         toast.info('방명록 작성이 성공적으로 저장되었습니다.')
         fetchEntries()
       } else {
+        console.warn("API 내부 에러러: ", error);
         toast.error('방명록 전송에 실패했습니다.')
       }
     } catch (err) {
+      console.warn("API 호출 에러: ", error);
       toast.error('전송 중 에러 발생: ' + err.message)
     }
   }
@@ -121,19 +125,19 @@ const Guestbook = ({ query, date }) => {
         </button>
       </form>
       
-      {date < new Date() && (
+      {date < new Date() && ( // Only show the button if the date is in the past
         <div>
           <button
             className={styles.submit}
             style={{fontSize: "xx-large"}}
             onClick={() => {
-              const urlParams = new URLSearchParams(window.location.search)
-              const pathParam = urlParams.get("path")
+              const urlParams = new URLSearchParams(window.location.search); // Extract query parameters from the URL
+              const pathParam = urlParams.get("path"); // Get the `path` parameter
 
               if (pathParam) {
-                window.open(`/share-photo?path=${encodeURIComponent(pathParam)}`, "_blank")
+                window.open(`/share-photo?path=${encodeURIComponent(pathParam)}`, "_blank"); // Open with path param
               } else {
-                window.open(`/share-photo`, "_blank")
+                window.open(`/share-photo`, "_blank"); // Notify the user if the path is not available
               }
             }}
           >

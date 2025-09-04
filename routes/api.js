@@ -7,7 +7,7 @@ const fsSync = require('fs');
 const { reqLogger, cleanupArtifacts, getDataPath, createMetricsWrapper } = require('./apiUtils');
 const { getInvitationData, addGuestbookEntry, getGuestbookEntries, getNextUploadIndex, addUploadHash, checkDuplicateHashes } = require('./db');
 
-module.exports = function(register) {
+module.exports = function(register) { // register is passed in
   const router = express.Router();
 
   router.use((req, res, next) => {
@@ -15,6 +15,7 @@ module.exports = function(register) {
     next();
   });
 
+  // Define Custom Metrics
   const apiRequestsTotal = new promClient.Counter({
     name: 'api_requests_total',
     help: 'Total number of API requests',
@@ -25,9 +26,10 @@ module.exports = function(register) {
     name: 'api_request_duration_seconds',
     help: 'Duration of API requests in seconds',
     labelNames: ['route', 'method', 'query_param'],
-    buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+    buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10], // Adjusted buckets
   });
 
+  // Register custom metrics if they aren't already registered (idempotent)
   if (!register.getSingleMetric('api_requests_total')) {
     register.registerMetric(apiRequestsTotal);
   }
