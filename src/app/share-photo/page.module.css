@@ -44,10 +44,10 @@
 
 .galleryContainer {
   width: 100%;
-  height: 70%; /* Set the height of the container */
-  overflow-y: auto; /* Enable scrolling inside the container */
+  height: 70%;
+  overflow-y: auto;
   overflow-x: hidden;
-  border: 2px solid var(--foreground); /* Optional: Add a border for the container */
+  border: 2px solid var(--foreground);
   border-radius: 2%;
 }
 
@@ -57,7 +57,7 @@
   padding: 10px;
   grid-template-columns: repeat(12, 1fr);
   justify-content: center;
-  width: 100%; /* Ensure the gallery takes full width of the container */
+  width: 100%;
 }
 
 @media (max-width: 1024px) {
@@ -74,9 +74,9 @@
 
 .gallery img {
   width: 100%;
-  height: 100%; /* Ensure the image fills the grid cell completely */
-  aspect-ratio: 1 / 1; /* Enforce a 1:1 aspect ratio */
-  object-fit: cover; /* Crop the image to fit the container */
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
 }
 
 .addButtonContainer {
@@ -114,7 +114,7 @@
 }
 
 .detail.hovered {
-  background-color: var(--foregroundTranspernt)00 80%; /* Darken the photo */
+  background-color: var(--foregroundTranspernt)00 80%;
 }
 
 .detail img {
@@ -125,31 +125,44 @@
 }
 
 .detail.hovered img {
-  opacity: 0.7; /* Dim the image */
+  opacity: 0.7;
 }
 
 .removeButton {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%); /* Center the X */
-  background: none; /* Remove background */
-  color: white; /* White X */
-  border: none; /* Remove border */
-  font-size: 32px; /* Larger X */
+  transform: translate(-50%, -50%);
+  background: none;
+  color: white;
+  border: none;
+  font-size: 32px;
   font-weight: bold;
   cursor: pointer;
-  z-index: 1; /* Ensure it appears above the image */
+  z-index: 1;
 }
 
 .removeButton:hover {
-  color: var(--background); /* Slightly dim the X on hover */
+  color: var(--background);
 }
 
 .duplicate {
-  border: 3px solid rgba(255, 165, 0, 0.8); /* Dark yellow border */
+  border: 3px solid rgba(255, 165, 0, 0.8);
 }
 
 .darkened {
-  filter: brightness(50%); /* Darken the image */
+  filter: brightness(50%);
+}
+
+.submit {
+  text-decoration: underline;
+  font-size: 14px;
+  font-weight: bold;
+  outline: none;
+  border: none;
+  display: block;
+  margin: 20px auto;
+  cursor: pointer;
+  background-color: transparent !important;
+  -webkit-appearance: none;
 }
