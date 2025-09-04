@@ -10,8 +10,8 @@ const Map = ({ clientId, mapInfo }) => {
         zoom: mapInfo.zoom,
         scrollWheel: false,
         keyboardShortcuts: false,
-        zoomControl: true, //줌 컨트롤의 표시 여부
-        zoomControlOptions: { //줌 컨트롤의 옵션
+        zoomControl: true,
+        zoomControlOptions: {
           style: naver.maps.ZoomControlStyle.SMALL,
           position: naver.maps.Position.TOP_RIGHT
         }
