@@ -1,31 +1,28 @@
-// src/app/modules/PhysicsConfetti.js
 "use client";
 
 import React, { useEffect, useRef } from 'react';
 import Matter from 'matter-js';
 
 const PhysicsConfetti = ({
-  colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5'], // Default colors
-  shapeSVGPath = '', // Will be used for rendering if provided
-  particleVisualScale = 1.0, // New prop for scaling SVG visual
+  colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5'],
+  shapeSVGPath = '',
+  particleVisualScale = 1.0,
   canvasWidth,
   canvasHeight,
 }) => {
-  const sceneRef = useRef(null); // For the Matter.js canvas container
+  const sceneRef = useRef(null);
   const engineRef = useRef(null);
   const runnerRef = useRef(null);
   const renderRef = useRef(null);
   const preRenderedPathRef = useRef(null);
-  const swipeDetectionDivRef = useRef(null); // Ref for the dedicated swipe interaction div
+  const swipeDetectionDivRef = useRef(null);
 
-  // Swipe detection state
   const swipeState = useRef({
     startX: 0, startY: 0, startTime: 0,
     currentX: 0, currentY: 0,
     isSwiping: false, isActive: false,
   });
 
-  // Defined parameters
   const PILE_AREA_HEIGHT_PX = 120;
   const SWIPE_MIN_HORIZONTAL_DISTANCE_PX = 75;
   const SWIPE_MAX_VERTICAL_DISTANCE_PX = 50;
@@ -33,7 +30,6 @@ const PhysicsConfetti = ({
   const SWIPE_MAX_DURATION_MS = 500;
 
   useEffect(() => {
-    // Initialize engine and runner if they don't exist
     if (!engineRef.current) engineRef.current = Matter.Engine.create();
     if (!runnerRef.current) runnerRef.current = Matter.Runner.create();
 
@@ -44,7 +40,6 @@ const PhysicsConfetti = ({
       try {
         preRenderedPathRef.current = new Path2D(shapeSVGPath);
       } catch (e) {
-        console.warn("Failed to create Path2D from shapeSVGPath:", e, shapeSVGPath);
         preRenderedPathRef.current = null;
       }
     } else {
@@ -57,7 +52,6 @@ const PhysicsConfetti = ({
     engine.velocityIterations = 6;
 
     if (!canvasWidth || !canvasHeight || !sceneRef.current) {
-      console.log("PhysicsConfetti: canvasWidth, canvasHeight, or sceneRef.current is not ready. Aborting setup.");
       return;
     }
 
@@ -154,7 +148,6 @@ const PhysicsConfetti = ({
           const isNearFloor = body.position.y >= nearFloorThreshold;
           const isInPileArea = body.position.y >= pileAreaYStart;
           const isNearlyStill = Matter.Vector.magnitude(body.velocity) < 0.1 && Math.abs(body.angularVelocity) < 0.1;
-          // Track when confetti enters pile area
           if (isInPileArea) {
             if (!body.pileEnteredAt) {
               body.pileEnteredAt = now;
@@ -173,12 +166,11 @@ const PhysicsConfetti = ({
         }
       });
     });
-    // Remove one confetti from pile if it has been there for over 10 seconds, with fade-out animation
-    const FADE_OUT_DURATION = 700; // ms
+
+    const FADE_OUT_DURATION = 700;
     const pileCleanupInterval = setInterval(() => {
       const now = Date.now();
       const bodies = Matter.Composite.allBodies(engine.world);
-      // Remove any confetti that finished fading out
       bodies.forEach(b => {
         if (b.label === 'confetti') {
           if (b.isFadingOut && b.fadeStartTime && (now - b.fadeStartTime > FADE_OUT_DURATION)) {
@@ -189,11 +181,9 @@ const PhysicsConfetti = ({
           }
         }
       });
-      // Find all confetti in pile area with pileEnteredAt set and over 10s, not already fading out
       const pileAreaYStart = canvasHeight - PILE_AREA_HEIGHT_PX;
       const piled = bodies.filter(b => b.label === 'confetti' && b.pileEnteredAt && !b.isFadingOut && b.position.y >= pileAreaYStart && (now - b.pileEnteredAt > 10000));
       if (piled.length > 0) {
-        // Mark only one per interval for fade-out
         piled[0].isFadingOut = true;
         piled[0].fadeStartTime = now;
       }
@@ -214,7 +204,6 @@ const PhysicsConfetti = ({
             const baseWidthScale = Math.abs(Math.sin(body.customRender.flipCycle));
             widthScaleFactor = 0.1 + baseWidthScale * 0.9;
           }
-          // Fade-out and swipe-out animation
           let alpha = 0.7;
           let extraTranslateX = 0;
           if (body.isSwipingOut && body.swipeOutStart && body.swipeOutDirection) {
@@ -222,7 +211,6 @@ const PhysicsConfetti = ({
             const elapsed = now - body.swipeOutStart;
             const progress = Math.min(1, elapsed / FADE_OUT_DURATION);
             alpha = 0.7 * (1 - progress);
-            // Move 300px in swipe direction over fade duration
             extraTranslateX = body.swipeOutDirection * 300 * progress;
           } else if (body.isFadingOut && body.fadeStartTime) {
             const now = Date.now();
@@ -238,7 +226,6 @@ const PhysicsConfetti = ({
           if (preRenderedPathRef.current) {
             context.fill(preRenderedPathRef.current);
           } else {
-            console.warn("Fallback rendering: preRenderedPath is null.");
             context.beginPath(); context.arc(0, 0, 5, 0, 2 * Math.PI); context.fill();
           }
           context.restore();
@@ -250,7 +237,6 @@ const PhysicsConfetti = ({
     Matter.Render.run(render);
     Matter.Runner.run(runner, engine);
 
-    // --- Event Handlers for Swipe (defined inside useEffect) ---
     const getPointerCoordinates = (e) => {
       if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
       return { x: e.clientX, y: e.clientY };
@@ -295,7 +281,6 @@ const PhysicsConfetti = ({
           const particlesToRemove = bodiesInSwipePath.filter(body =>
             body.label === 'confetti' && body.position.y >= pileAreaYStart);
           const now = Date.now();
-          // Determine swipe direction (left or right)
           const swipeDir = deltaX > 0 ? 1 : -1;
           particlesToRemove.forEach(particle => {
             if (!particle.isFadingOut && !particle.isSwipingOut) {
@@ -313,7 +298,6 @@ const PhysicsConfetti = ({
       if (swipeState.current.isActive) handlePointerUp(e);
     };
 
-    // --- Add Event Listeners ---
     const swipeDiv = swipeDetectionDivRef.current;
     let listenersAttached = false;
     if (swipeDiv && canvasHeight) {
@@ -328,23 +312,20 @@ const PhysicsConfetti = ({
       listenersAttached = true;
     }
 
-    // --- SINGLE CLEANUP FUNCTION ---
     return () => {
       clearInterval(spawnInterval);
       clearInterval(pileCleanupInterval);
-      if (runner) Matter.Runner.stop(runner); // Use runner from setup scope
-      if (renderRef.current) { // Use renderRef for consistency
+      if (runner) Matter.Runner.stop(runner);
+      if (renderRef.current) {
           Matter.Render.stop(renderRef.current);
           if (renderRef.current.canvas) renderRef.current.canvas.remove();
           renderRef.current = null;
       }
-      if (engine) { // Use engine from setup scope
+      if (engine) {
           Matter.World.clear(engine.world);
           Matter.Engine.clear(engine);
       }
 
-      // Cleanup swipe event listeners
-      // Use the 'swipeDiv' variable captured in the setup scope for removeEventListener
       if (listenersAttached && swipeDiv) {
           swipeDiv.removeEventListener('mousedown', handlePointerDown);
           swipeDiv.removeEventListener('touchstart', handlePointerDown);

@@ -6,7 +6,7 @@ const multer = require("multer");
 const fsSync = require("fs");
 const crypto = require('crypto');
 
-module.exports = function(register) { // register is passed in
+module.exports = function(register) {
   const router = express.Router();
 
   const reqLogger = (req, msg, err) => {
@@ -29,7 +29,6 @@ module.exports = function(register) { // register is passed in
     next();
   });
 
-  // Define Custom Metrics
   const apiRequestsTotal = new promClient.Counter({
     name: 'api_requests_total',
     help: 'Total number of API requests',
@@ -40,10 +39,9 @@ module.exports = function(register) { // register is passed in
     name: 'api_request_duration_seconds',
     help: 'Duration of API requests in seconds',
     labelNames: ['route', 'method', 'query_param'],
-    buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10], // Adjusted buckets
+    buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
   });
 
-  // Register custom metrics if they aren't already registered (idempotent)
   if (!register.getSingleMetric('api_requests_total')) {
     register.registerMetric(apiRequestsTotal);
   }
@@ -51,7 +49,6 @@ module.exports = function(register) { // register is passed in
     register.registerMetric(apiRequestDurationSeconds);
   }
 
-  // Data route
   router.get('/data/:query', async (req, res) => {
     const route = '/data';
     const method = 'GET';
@@ -174,7 +171,6 @@ module.exports = function(register) { // register is passed in
     }
   });
 
-  // BGM route
   router.get('/bgm/:query', (req, res) => {
     const route = '/bgm';
     const method = 'GET';
@@ -203,7 +199,6 @@ module.exports = function(register) { // register is passed in
       });
   });
 
-  // Image route
   router.get('/image/:query/:image', (req, res) => {
     const route = '/image';
     const method = 'GET';
@@ -232,7 +227,6 @@ module.exports = function(register) { // register is passed in
       });
   });
 
-  // Guestbook write route
   router.post('/guestbook/write/:query', async (req, res) => {
     const route = '/guestbook/write';
     const method = 'POST';
@@ -278,7 +272,6 @@ module.exports = function(register) { // register is passed in
     }
   });
 
-  // Guestbook read route
   router.get('/guestbook/read/:query', async (req, res) => {
     const route = '/guestbook/read';
     const method = 'GET';
@@ -306,7 +299,6 @@ module.exports = function(register) { // register is passed in
     }
   });
 
-  // POST route to handle chunked photo uploads
   router.post("/photo-upload/:query", async (req, res) => {
     const query = req.params.query;
     if (!query) {
@@ -342,7 +334,7 @@ module.exports = function(register) { // register is passed in
       },
       filename: (req, file, cb) => {
         const fileCount = Object.keys(uploadHash[query]).length;
-        const newFileName = `${fileCount + Object.keys(req.files || {}).length}.jpg`; // Ensure unique filenames
+        const newFileName = `${fileCount + Object.keys(req.files || {}).length}.jpg`;
         cb(null, newFileName);
       },
     });
@@ -359,7 +351,7 @@ module.exports = function(register) { // register is passed in
         for (const file of req.files) {
           const fileBuffer = await fs.readFile(file.path);
           const hash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-          uploadHash[query][file.filename] = hash; // Save file ID and hash
+          uploadHash[query][file.filename] = hash;
         }
 
         await fs.writeFile(hashFilePath, JSON.stringify(uploadHash, null, 2));
@@ -377,7 +369,6 @@ module.exports = function(register) { // register is passed in
     });
   });
 
-  // GET route to fetch photo hashes
   router.get("/photo-hashes/:query", async (req, res) => {
     const query = req.params.query;
     if (!query) {
