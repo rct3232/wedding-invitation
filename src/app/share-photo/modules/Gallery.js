@@ -1,8 +1,42 @@
 'use client';
 
-import React from "react";
+import React, { memo } from "react";
 import FileInput from "./FileInput";
 import styles from "../page.module.css";
+
+const GalleryItem = memo(function GalleryItem({
+  file,
+  index,
+  isDuplicate,
+  hoveredIndex,
+  setHoveredIndex,
+  handleRemovePhoto,
+}) {
+  return (
+    <div
+      className={`${styles.detail} ${
+        hoveredIndex === index ? styles.hovered : ""
+      } ${isDuplicate ? styles.duplicate : ""}`}
+      onMouseEnter={() => setHoveredIndex(index)}
+      onMouseLeave={() => setHoveredIndex(null)}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <img
+        src={URL.createObjectURL(file)}
+        alt={`Thumbnail ${index + 1}`}
+        className={isDuplicate ? styles.darkened : ""}
+      />
+      {hoveredIndex === index && (
+        <button
+          className={styles.removeButton}
+          onClick={() => handleRemovePhoto(index, isDuplicate)}
+        >
+          X
+        </button>
+      )}
+    </div>
+  );
+});
 
 export default function Gallery({
   selectedFiles,
@@ -11,36 +45,23 @@ export default function Gallery({
   setHoveredIndex,
   handleRemovePhoto,
   handleFileChange,
+  isSelecting,
 }) {
   return (
-    <div className={styles.gallery}>      
-      <FileInput handleFileChange={handleFileChange} />
+    <div className={styles.gallery}>
+      <FileInput handleFileChange={handleFileChange} isSelecting={isSelecting} />
       {[...selectedFiles, ...duplicateFiles].map((file, index) => {
-        const isDuplicate = duplicateFiles.includes(file);
+        const isDuplicate = index >= selectedFiles.length;
         return (
-          <div
+          <GalleryItem
             key={index}
-            className={`${styles.detail} ${
-              hoveredIndex === index ? styles.hovered : ""
-            } ${isDuplicate ? styles.duplicate : ""}`}
-            onMouseEnter={() => setHoveredIndex(index)}
-            onMouseLeave={() => setHoveredIndex(null)}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={URL.createObjectURL(file)}
-              alt={`Thumbnail ${index + 1}`}
-              className={isDuplicate ? styles.darkened : ""}
-            />
-            {hoveredIndex === index && (
-              <button
-                className={styles.removeButton}
-                onClick={() => handleRemovePhoto(index, isDuplicate)}
-              >
-                X
-              </button>
-            )}
-          </div>
+            file={file}
+            index={index}
+            isDuplicate={isDuplicate}
+            hoveredIndex={hoveredIndex}
+            setHoveredIndex={setHoveredIndex}
+            handleRemovePhoto={handleRemovePhoto}
+          />
         );
       })}
     </div>

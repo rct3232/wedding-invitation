@@ -4,7 +4,6 @@ const path = require('path');
 const promClient = require('prom-client');
 const multer = require("multer");
 const fsSync = require("fs");
-const crypto = require('crypto');
 
 module.exports = function(register) {
   const router = express.Router();
@@ -303,7 +302,7 @@ module.exports = function(register) {
     const query = req.params.query;
     if (!query) {
       reqLogger(req, 'Query parameter is required');
-      return res.status(400).json({ message: "Query parameter is required" });
+      return res.status(400).json({ message: "잘못된 접근입니다." });
     }
 
     const uploadDir = path.join(__dirname, "../data/", query, "/uploads");
@@ -320,7 +319,7 @@ module.exports = function(register) {
     } catch (err) {
       if (err.code !== 'ENOENT') {
         reqLogger(req, "Error reading uploadhash.json:", err);
-        return res.status(500).json({ message: "Failed to read upload hash file" });
+        return res.status(500).json({ message: "서버 내부 에러가 발생했습니다." });
       }
     }
 
@@ -344,27 +343,30 @@ module.exports = function(register) {
     upload(req, res, async (err) => {
       if (err) {
         reqLogger(req, 'Error uploading chunk', err);
-        return res.status(500).json({ message: "Failed to upload chunk" });
+        return res.status(500).json({ message: "업로드에 실패했습니다." });
       }
 
+      const clientHashes = req.body.hashes;
+
       try {
-        for (const file of req.files) {
-          const fileBuffer = await fs.readFile(file.path);
-          const hash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-          uploadHash[query][file.filename] = hash;
+        for (let i = 0; i < req.files.length; i++) {
+          const file = req.files[i];
+          const clientHash = clientHashes[i];
+
+          uploadHash[query][file.filename] = clientHash;
         }
 
         await fs.writeFile(hashFilePath, JSON.stringify(uploadHash, null, 2));
         res.status(200).json({
-          message: "Chunk uploaded successfully",
-          files: req.files.map((file) => ({
+          message: "업로드에 성공했습니다!",
+          files: req.files.map((file, index) => ({
             id: file.filename,
-            hash: uploadHash[query][file.filename],
+            clientHash: clientHashes[index],
           })),
         });
       } catch (error) {
         reqLogger(req, "Error processing uploaded files:", error);
-        res.status(500).json({ message: "Failed to process uploaded files" });
+        res.status(500).json({ message: "업로드에 실패했습니다." });
       }
     });
   });
@@ -372,7 +374,7 @@ module.exports = function(register) {
   router.get("/photo-hashes/:query", async (req, res) => {
     const query = req.params.query;
     if (!query) {
-      return res.status(400).json({ message: "Query parameter is required" });
+      return res.status(400).json({ message: "잘못된 접근입니다." });
     }
 
     const hashFilePath = path.join(__dirname, "../data/uploadhash.json");
@@ -391,8 +393,8 @@ module.exports = function(register) {
       if (err.code === "ENOENT") {
         return res.status(200).json({ hashes: [] });
       }
-      console.error("Error reading uploadhash.json:", err);
-      res.status(500).json({ message: "Failed to read upload hash file" });
+      reqLogger(req, "Error reading uploadhash.json:", err);
+      res.status(500).json({ message: "서버 내부 에러가 발생했습니다." });
     }
   });
 
