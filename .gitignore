@@ -42,4 +42,4 @@ next-env.d.ts
 
 # datafile
 /data
-/public/metadata.json
+/public/meta_*
