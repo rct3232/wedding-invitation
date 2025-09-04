@@ -6,8 +6,8 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ searchParams }) {
   const path = searchParams?.path;
   try {
-    const response = await fetch(`${process.env.SERVICE_URL}/metadata.json`);
-    const data = await response.json()[path];
+    const response = await fetch(`http://${process.env.SERVICE_URL}/meta_${path}.json`);
+    const data = await response.json();
 
     return {
       title: data.title,
@@ -16,7 +16,7 @@ export async function generateMetadata({ searchParams }) {
         title: data.title,
         description: data.description,
         url: `${process.env.SERVICE_URL}/?path=${path}`,
-        type: data.openGraph?.type,
+        type: "website",
         images: {
           url: `${process.env.SERVICE_URL}/meta_${path}.jpg`,
           width: 1200,
@@ -26,7 +26,7 @@ export async function generateMetadata({ searchParams }) {
       },
     };
   } catch (error) {
-    console.error("Failed to fetch metadata:", error);
+    console.error("Failed to fetch metadata: ", error);
     return {
       title: "모바일 청첩장",
       description: "데이터 불러오기 실패",
