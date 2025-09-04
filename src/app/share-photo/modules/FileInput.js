@@ -19,7 +19,7 @@ export default function FileInput({ handleFileChange, isSelecting }) {
       )}
       <div className={styles.addButtonContainer}>
         <label htmlFor="fileInput" className={styles.addButton}>
-          +
+          <img src="/add-image.png" alt="+" style={{ width: '40%', height: 'auto' }} />
         </label>
         <input
           id="fileInput"

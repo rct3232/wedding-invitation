@@ -5,7 +5,7 @@
   flex-grow: 1;
   position: relative;
   width: 100%;
-  height: 100svh;
+  height: 100%;
   gap: 30px;
   padding: 15svh 20px 20px 20px;
   background: linear-gradient(
@@ -26,10 +26,12 @@
 
 .galleryContainer {
   width: 100%;
-  height: 70%;
+  height: 65%;
   overflow-y: auto;
   overflow-x: hidden;
-  border: 2px solid var(--foreground);
+  border: none;
+  background-color: var(--background); /* fallback */
+  background-color: color-mix(in srgb, var(--background) 20%, #ffffff 80%);
   border-radius: 2%;
 }
 
@@ -67,8 +69,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #dddddd;
-  border: 2px #dddddd;
+  border: #d9d4cf 1px dashed;
   border-radius: 10px;
   cursor: pointer;
 }
@@ -79,7 +80,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 2px solid var(--background);
   border-radius: 50%;
   font-size: 24px;
   color: var(--foreground);
@@ -155,7 +155,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: #dddddd80;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -165,8 +165,8 @@
 .spinner {
   width: 50px;
   height: 50px;
-  border: 5px solid #f3f3f3;
-  border-top: 5px solid #3498db;
+  border: 5px solid #dddddd;
+  border-top: 5px solid #d9d4cf;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
