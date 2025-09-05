@@ -1,21 +1,3 @@
-.loader {
-  width: 50px;
-  height: 50px;
-  border: 5px solid #dddddd;
-  border-top: 5px solid #d9d4cf;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .page {
   display: flex;
   flex-direction: column;
@@ -23,7 +5,7 @@
   flex-grow: 1;
   position: relative;
   width: 100%;
-  height: 100svh;
+  height: 100%;
   gap: 30px;
   padding: 15svh 20px 20px 20px;
   background: linear-gradient(
@@ -42,13 +24,25 @@
   word-break: keep-all;
 }
 
+.galleryWrap {
+  width: 100%;
+  height: 65%;
+  position: relative;
+  border-radius: 2%;
+  overflow: hidden;
+  background-color: var(--background);
+  background-color: color-mix(in srgb, var(--background) 20%, #ffffff 80%);
+}
+
 .galleryContainer {
   width: 100%;
-  height: 70%; /* Set the height of the container */
-  overflow-y: auto; /* Enable scrolling inside the container */
+  height: 100%;
+  overflow-y: auto;
   overflow-x: hidden;
-  border: 2px solid var(--foreground); /* Optional: Add a border for the container */
-  border-radius: 2%;
+  border: none;
+  background-color: transparent;
+  position: relative;
+  z-index: 1;
 }
 
 .gallery {
@@ -57,7 +51,7 @@
   padding: 10px;
   grid-template-columns: repeat(12, 1fr);
   justify-content: center;
-  width: 100%; /* Ensure the gallery takes full width of the container */
+  width: 100%;
 }
 
 @media (max-width: 1024px) {
@@ -74,9 +68,9 @@
 
 .gallery img {
   width: 100%;
-  height: 100%; /* Ensure the image fills the grid cell completely */
-  aspect-ratio: 1 / 1; /* Enforce a 1:1 aspect ratio */
-  object-fit: cover; /* Crop the image to fit the container */
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
 }
 
 .addButtonContainer {
@@ -85,8 +79,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #dddddd;
-  border: 2px #dddddd;
+  border: #d9d4cf 1px dashed;
   border-radius: 10px;
   cursor: pointer;
 }
@@ -97,11 +90,16 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 2px solid var(--background);
   border-radius: 50%;
   font-size: 24px;
   color: var(--foreground);
   background-color: var(--background);
+}
+
+.addDisabled {
+  opacity: 0.4;
+  filter: grayscale(20%);
+  pointer-events: none; /* prevent click while uploading */
 }
 
 .hiddenInput {
@@ -114,7 +112,7 @@
 }
 
 .detail.hovered {
-  background-color: var(--foregroundTranspernt)00 80%; /* Darken the photo */
+  background-color: var(--foregroundTranspernt)00 80%;
 }
 
 .detail img {
@@ -125,33 +123,75 @@
 }
 
 .detail.hovered img {
-  opacity: 0.7; /* Dim the image */
+  opacity: 0.7;
+}
+
+.progressOverlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 6px 8px 8px 8px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  width: var(--progress, 0%);
+  height: 100%;
+  background: linear-gradient(90deg, #3f51b5, #6a8df0);
+  transition: width 150ms ease;
+}
+
+.progressComplete .progressFill {
+  background: #4caf50;
+}
+
+.globalProgressWrap {
+  width: min(420px, 90%);
+  margin: 20px auto;
+  text-align: center;
+}
+
+.globalProgressLabel {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--foreground);
+  opacity: 0.8;
 }
 
 .removeButton {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%); /* Center the X */
-  background: none; /* Remove background */
-  color: white; /* White X */
-  border: none; /* Remove border */
-  font-size: 32px; /* Larger X */
+  transform: translate(-50%, -50%);
+  background: none;
+  color: white;
+  border: none;
+  font-size: 32px;
   font-weight: bold;
   cursor: pointer;
-  z-index: 1; /* Ensure it appears above the image */
+  z-index: 1;
 }
 
 .removeButton:hover {
-  color: var(--background); /* Slightly dim the X on hover */
+  color: var(--background);
 }
 
 .duplicate {
-  border: 3px solid rgba(255, 165, 0, 0.8); /* Dark yellow border */
+  border: 3px solid rgba(255, 165, 0, 0.8);
 }
 
 .darkened {
-  filter: brightness(50%); /* Darken the image */
+  filter: brightness(50%);
 }
 
 .submit {
@@ -164,5 +204,60 @@
   margin: 20px auto;
   cursor: pointer;
   background-color: transparent !important;
+  appearance: none;
   -webkit-appearance: none;
 }
+
+.loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #dddddd80;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #dddddd;
+  border-top: 5px solid #d9d4cf;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.shadow {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  transition: box-shadow 0.2s ease-out;
+  z-index: 2;
+  border-radius: inherit;
+}
+
+.offTop .shadowTop {
+  box-shadow: 0 1.5em 1em -1em var(--background) inset;
+}
+
+.offBottom .shadowBottom {
+  box-shadow: 0 -1.5em 1em -1em var(--background) inset;
+}
+
+.shadowTop { will-change: box-shadow; }
+.shadowBottom { will-change: box-shadow; }

@@ -4,9 +4,8 @@ const path = require('path');
 const promClient = require('prom-client');
 const multer = require("multer");
 const fsSync = require("fs");
-const crypto = require('crypto');
 
-module.exports = function(register) { // register is passed in
+module.exports = function(register) {
   const router = express.Router();
 
   const reqLogger = (req, msg, err) => {
@@ -29,7 +28,6 @@ module.exports = function(register) { // register is passed in
     next();
   });
 
-  // Define Custom Metrics
   const apiRequestsTotal = new promClient.Counter({
     name: 'api_requests_total',
     help: 'Total number of API requests',
@@ -40,10 +38,9 @@ module.exports = function(register) { // register is passed in
     name: 'api_request_duration_seconds',
     help: 'Duration of API requests in seconds',
     labelNames: ['route', 'method', 'query_param'],
-    buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10], // Adjusted buckets
+    buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
   });
 
-  // Register custom metrics if they aren't already registered (idempotent)
   if (!register.getSingleMetric('api_requests_total')) {
     register.registerMetric(apiRequestsTotal);
   }
@@ -51,7 +48,24 @@ module.exports = function(register) { // register is passed in
     register.registerMetric(apiRequestDurationSeconds);
   }
 
-  // Data route
+  // Helper: cleanup partial artifacts created by chunked uploads
+  const cleanupArtifacts = async (fileId, tmpDir, finalPath) => {
+    if (!fileId || !tmpDir) return;
+    try {
+      const files = await fs.readdir(tmpDir);
+      await Promise.all(
+        files
+          .filter((name) => name.startsWith(`${fileId}.`) && name.endsWith('.part'))
+          .map((name) => fs.unlink(path.join(tmpDir, name)).catch(() => {}))
+      );
+      if (finalPath && fsSync.existsSync(finalPath)) {
+        await fs.unlink(finalPath).catch(() => {});
+      }
+    } catch {
+      // ignore cleanup errors
+    }
+  };
+
   router.get('/data/:query', async (req, res) => {
     const route = '/data';
     const method = 'GET';
@@ -174,7 +188,6 @@ module.exports = function(register) { // register is passed in
     }
   });
 
-  // BGM route
   router.get('/bgm/:query', (req, res) => {
     const route = '/bgm';
     const method = 'GET';
@@ -203,7 +216,6 @@ module.exports = function(register) { // register is passed in
       });
   });
 
-  // Image route
   router.get('/image/:query/:image', (req, res) => {
     const route = '/image';
     const method = 'GET';
@@ -212,7 +224,7 @@ module.exports = function(register) { // register is passed in
     let statusCode = 200;
 
     const imagePath = path.join(__dirname, '..', 'data', query, 'full', image);
-    fs.access(imagePath, fs.constants.F_OK)
+    fs.access(imagePath)
       .then(() => {
         res.sendFile(imagePath, (err) => {
           if (err) {
@@ -223,7 +235,7 @@ module.exports = function(register) { // register is passed in
           apiRequestsTotal.labels(route, method, statusCode, query).inc();
         });
       })
-      .catch((err) => {
+      .catch(() => {
         statusCode = 404;
         reqLogger(req, `Error Image not found: ${imagePath}`);
         res.status(404).json({ error: 'Image not found' });
@@ -232,7 +244,6 @@ module.exports = function(register) { // register is passed in
       });
   });
 
-  // Guestbook write route
   router.post('/guestbook/write/:query', async (req, res) => {
     const route = '/guestbook/write';
     const method = 'POST';
@@ -278,7 +289,6 @@ module.exports = function(register) { // register is passed in
     }
   });
 
-  // Guestbook read route
   router.get('/guestbook/read/:query', async (req, res) => {
     const route = '/guestbook/read';
     const method = 'GET';
@@ -306,102 +316,183 @@ module.exports = function(register) { // register is passed in
     }
   });
 
-  // POST route to handle chunked photo uploads
-  router.post("/photo-upload/:query", async (req, res) => {
-    const query = req.params.query;
-    if (!query) {
-      reqLogger(req, 'Query parameter is required');
-      return res.status(400).json({ message: "Query parameter is required" });
-    }
+  // New: Chunked upload endpoint per photo
+  router.post("/photo-upload-chunk/:query", (req, res) => {
+    const route = '/photo-upload-chunk';
+    const method = 'POST';
+    const { query } = req.params;
+    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: query });
+    let statusCode = 200;
 
-    const uploadDir = path.join(__dirname, "../data/", query, "/uploads");
-    const hashFilePath = path.join(__dirname, "../data/uploadhash.json");
+    const memoryUpload = multer({ storage: multer.memoryStorage() }).single("chunk");
 
-    if (!fsSync.existsSync(uploadDir)) {
-      fsSync.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    let uploadHash = {};
-    try {
-      const hashFileContent = await fs.readFile(hashFilePath, 'utf8');
-      uploadHash = JSON.parse(hashFileContent);
-    } catch (err) {
-      if (err.code !== 'ENOENT') {
-        reqLogger(req, "Error reading uploadhash.json:", err);
-        return res.status(500).json({ message: "Failed to read upload hash file" });
-      }
-    }
-
-    if (!uploadHash[query]) {
-      uploadHash[query] = {};
-    }
-
-    const storage = multer.diskStorage({
-      destination: (req, file, cb) => {
-        cb(null, uploadDir);
-      },
-      filename: (req, file, cb) => {
-        const fileCount = Object.keys(uploadHash[query]).length;
-        const newFileName = `${fileCount + Object.keys(req.files || {}).length}.jpg`; // Ensure unique filenames
-        cb(null, newFileName);
-      },
-    });
-
-    const upload = multer({ storage }).array("photos", 10);
-
-    upload(req, res, async (err) => {
+    memoryUpload(req, res, async (err) => {
       if (err) {
-        reqLogger(req, 'Error uploading chunk', err);
-        return res.status(500).json({ message: "Failed to upload chunk" });
+        statusCode = 500;
+        reqLogger(req, 'Error receiving chunk', err);
+        end();
+        apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
+        return res.status(500).json({ message: "업로드에 실패했습니다." });
       }
+
+      let finalPath; // will be set if we reached assembly stage
 
       try {
-        for (const file of req.files) {
-          const fileBuffer = await fs.readFile(file.path);
-          const hash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-          uploadHash[query][file.filename] = hash; // Save file ID and hash
+        if (!query) {
+          statusCode = 400;
+          end();
+          apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
+          return res.status(400).json({ message: "잘못된 접근입니다." });
         }
 
+        const { fileId, chunkIndex, totalChunks, originalName, hash } = req.body || {};
+        if (!req.file || !fileId || chunkIndex === undefined || !totalChunks || !hash) {
+          statusCode = 400;
+          end();
+          apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
+          return res.status(400).json({ message: "필수 파라미터가 누락되었습니다." });
+        }
+
+        const idx = parseInt(chunkIndex, 10);
+        const total = parseInt(totalChunks, 10);
+        if (Number.isNaN(idx) || Number.isNaN(total) || total <= 0) {
+          statusCode = 400;
+          end();
+          apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
+          return res.status(400).json({ message: "청크 인덱스가 올바르지 않습니다." });
+        }
+
+        const baseDir = path.join(__dirname, "../data/", query);
+        const tmpDir = path.join(baseDir, "uploads_tmp");
+        const uploadDir = path.join(baseDir, "uploads");
+        if (!fsSync.existsSync(tmpDir)) fsSync.mkdirSync(tmpDir, { recursive: true });
+        if (!fsSync.existsSync(uploadDir)) fsSync.mkdirSync(uploadDir, { recursive: true });
+
+        // Save this chunk as a part file
+        const partPath = path.join(tmpDir, `${fileId}.${idx}.part`);
+        await fs.writeFile(partPath, req.file.buffer);
+
+        // If this is not the last chunk, return early with progress ack
+        if (idx < total - 1) {
+          res.status(200).json({ received: true, chunkIndex: idx, totalChunks: total });
+          end();
+          apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
+          return;
+        }
+
+        // Last chunk received: assemble all parts in order
+        // Verify all parts exist
+        for (let i = 0; i < total; i++) {
+          const p = path.join(tmpDir, `${fileId}.${i}.part`);
+          if (!fsSync.existsSync(p)) {
+            statusCode = 400;
+            reqLogger(req, `Missing part file: ${p}`);
+            // Cleanup all partial parts for this fileId
+            await cleanupArtifacts(fileId, tmpDir, undefined);
+            end();
+            apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
+            return res.status(400).json({ message: "누락된 청크가 있습니다." });
+          }
+        }
+
+        // Load or init uploadhash.json
+        const hashFilePath = path.join(__dirname, "../data/uploadhash.json");
+        let uploadHash = {};
+        try {
+          const content = await fs.readFile(hashFilePath, "utf8");
+          uploadHash = JSON.parse(content);
+        } catch (e) {
+          if (e.code !== "ENOENT") {
+            statusCode = 500;
+            reqLogger(req, "Error reading uploadhash.json", e);
+            // cleanup parts on fatal error
+            await cleanupArtifacts(fileId, tmpDir, undefined);
+            end();
+            apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
+            return res.status(500).json({ message: "서버 내부 에러가 발생했습니다." });
+          }
+        }
+        if (!uploadHash[query]) uploadHash[query] = {};
+
+        // Create next file name
+        const nextIndex = Object.keys(uploadHash[query]).length + 1;
+        const finalName = `${nextIndex}.jpg`;
+        finalPath = path.join(uploadDir, finalName);
+
+        // Assemble parts into final file
+        for (let i = 0; i < total; i++) {
+          const p = path.join(tmpDir, `${fileId}.${i}.part`);
+          const buf = await fs.readFile(p);
+          fsSync.appendFileSync(finalPath, buf);
+        }
+
+        // Cleanup parts
+        for (let i = 0; i < total; i++) {
+          const p = path.join(tmpDir, `${fileId}.${i}.part`);
+          try { await fs.unlink(p); } catch {}
+        }
+
+        // Save hash mapping
+        uploadHash[query][finalName] = hash;
         await fs.writeFile(hashFilePath, JSON.stringify(uploadHash, null, 2));
-        res.status(200).json({
-          message: "Chunk uploaded successfully",
-          files: req.files.map((file) => ({
-            id: file.filename,
-            hash: uploadHash[query][file.filename],
-          })),
-        });
-      } catch (error) {
-        reqLogger(req, "Error processing uploaded files:", error);
-        res.status(500).json({ message: "Failed to process uploaded files" });
+
+        res.status(200).json({ done: true, id: finalName, originalName: originalName || null });
+      } catch (e) {
+        statusCode = 500;
+        reqLogger(req, 'Error processing chunked upload', e);
+        // Best-effort cleanup of partial chunks and partially assembled file
+        try {
+          const { fileId } = req.body || {};
+          const baseDir = path.join(__dirname, "../data/", req.params.query || "");
+          const tmpDir = path.join(baseDir, "uploads_tmp");
+          await cleanupArtifacts(fileId, tmpDir, finalPath);
+        } catch {}
+        res.status(500).json({ message: "업로드에 실패했습니다." });
+      } finally {
+        end();
+        apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
       }
     });
   });
 
-  // GET route to fetch photo hashes
-  router.get("/photo-hashes/:query", async (req, res) => {
-    const query = req.params.query;
-    if (!query) {
-      return res.status(400).json({ message: "Query parameter is required" });
-    }
-
-    const hashFilePath = path.join(__dirname, "../data/uploadhash.json");
+  router.post("/photo-hash-check/:query", async (req, res) => {
+    const route = '/photo-hash-check';
+    const method = 'POST';
+    const { query } = req.params;
+    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: query });
+    let statusCode = 200;
 
     try {
-      const hashFileContent = await fs.readFile(hashFilePath, "utf8");
-      const uploadHash = JSON.parse(hashFileContent);
-
-      if (!uploadHash[query]) {
-        return res.status(200).json({ hashes: [] });
+      if (!query) {
+        statusCode = 400;
+        return res.status(400).json({ message: "잘못된 접근입니다." });
       }
 
-      const hashes = Object.values(uploadHash[query]);
-      res.status(200).json({ hashes });
+      const { hashes } = req.body || {};
+      if (!Array.isArray(hashes)) {
+        statusCode = 400;
+        return res.status(400).json({ message: "서버 내부 에러가 발생했습니다." });
+      }
+
+      const hashFilePath = path.join(__dirname, "../data/uploadhash.json");
+      let uploadHash = {};
+      try {
+        const content = await fs.readFile(hashFilePath, "utf8");
+        uploadHash = JSON.parse(content);
+      } catch (err) {
+        if (err.code !== "ENOENT") throw err;
+      }
+
+      const existing = new Set(Object.values(uploadHash[query] || {}));
+      const duplicates = hashes.filter(h => existing.has(h));
+      res.status(200).json({ duplicates });
     } catch (err) {
-      if (err.code === "ENOENT") {
-        return res.status(200).json({ hashes: [] });
-      }
-      console.error("Error reading uploadhash.json:", err);
-      res.status(500).json({ message: "Failed to read upload hash file" });
+      statusCode = 500;
+      reqLogger(req, 'Error checking photo hashes', err);
+      res.status(500).json({ message: "서버 내부 에러가 발생했습니다." });
+    } finally {
+      end();
+      apiRequestsTotal.labels('/photo-hash-check', 'POST', statusCode, req.params.query || '').inc();
     }
   });
 
