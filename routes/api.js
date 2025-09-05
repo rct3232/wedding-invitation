@@ -371,30 +371,44 @@ module.exports = function(register) {
     });
   });
 
-  router.get("/photo-hashes/:query", async (req, res) => {
-    const query = req.params.query;
-    if (!query) {
-      return res.status(400).json({ message: "잘못된 접근입니다." });
-    }
-
-    const hashFilePath = path.join(__dirname, "../data/uploadhash.json");
+  router.post("/photo-hash-check/:query", async (req, res) => {
+    const route = '/photo-hash-check';
+    const method = 'POST';
+    const { query } = req.params;
+    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: query });
+    let statusCode = 200;
 
     try {
-      const hashFileContent = await fs.readFile(hashFilePath, "utf8");
-      const uploadHash = JSON.parse(hashFileContent);
-
-      if (!uploadHash[query]) {
-        return res.status(200).json({ hashes: [] });
+      if (!query) {
+        statusCode = 400;
+        return res.status(400).json({ message: "잘못된 접근입니다." });
       }
 
-      const hashes = Object.values(uploadHash[query]);
-      res.status(200).json({ hashes });
+      const { hashes } = req.body || {};
+      if (!Array.isArray(hashes)) {
+        statusCode = 400;
+        return res.status(400).json({ message: "서버 내부 에러가 발생했습니다." });
+      }
+
+      const hashFilePath = path.join(__dirname, "../data/uploadhash.json");
+      let uploadHash = {};
+      try {
+        const content = await fs.readFile(hashFilePath, "utf8");
+        uploadHash = JSON.parse(content);
+      } catch (err) {
+        if (err.code !== "ENOENT") throw err;
+      }
+
+      const existing = new Set(Object.values(uploadHash[query] || {}));
+      const duplicates = hashes.filter(h => existing.has(h));
+      res.status(200).json({ duplicates });
     } catch (err) {
-      if (err.code === "ENOENT") {
-        return res.status(200).json({ hashes: [] });
-      }
-      reqLogger(req, "Error reading uploadhash.json:", err);
+      statusCode = 500;
+      reqLogger(req, 'Error checking photo hashes', err);
       res.status(500).json({ message: "서버 내부 에러가 발생했습니다." });
+    } finally {
+      end();
+      apiRequestsTotal.labels('/photo-hash-check', 'POST', statusCode, req.params.query || '').inc();
     }
   });
 

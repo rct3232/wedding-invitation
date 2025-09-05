@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import CryptoJS from "crypto-js";
 
 export default function usePhotoUpload() {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [duplicateFiles, setDuplicateFiles] = useState([]);
   const [hoveredIndex, setHoveredIndex] = useState(null);
-  const [existingHashes, setExistingHashes] = useState(new Set());
   const [isUploading, setIsUploading] = useState(false);
   const [originalFiles, setOriginalFiles] = useState([]);
   const [isSelecting, setIsSelecting] = useState(false);
@@ -16,23 +15,6 @@ export default function usePhotoUpload() {
   const [duplicateHashes, setDuplicateHashes] = useState([]);
 
   const CHUNK_SIZE = 3;
-
-  const fetchHashes = async (pathParam) => {
-    try {
-      const response = await fetch(`/api/photo-hashes/${encodeURIComponent(pathParam)}`);
-      if (response.ok) {
-        const data = await response.json();
-        const serverSet = new Set(data.hashes);
-        setExistingHashes(serverSet);
-        return serverSet;
-      } else {
-        console.error("Failed to fetch existing hashes.");
-      }
-    } catch (error) {
-      console.error("Error fetching hashes:", error);
-    }
-    return new Set();
-  };
 
   const calculateFileHash = async (file) => {
     const arrayBuffer = await file.arrayBuffer();
@@ -86,56 +68,79 @@ export default function usePhotoUpload() {
     });
   };
 
+  const checkServerDuplicates = async (pathParam, hashes) => {
+    try {
+      const res = await fetch(`/api/photo-hash-check/${encodeURIComponent(pathParam)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hashes }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return new Set(data.duplicates || []);
+      }
+    } catch (e) {
+      console.error("Error checking duplicates:", e);
+    }
+    return new Set();
+  };
+
   const handleFileChange = useCallback(
     async (event) => {
       setIsSelecting(true);
       try {
         const urlParams = new URLSearchParams(window.location.search);
         const pathParam = urlParams.get("path");
-
         if (!pathParam) {
           alert("Path parameter is missing.");
           return;
         }
 
-        const files = Array.from(event.target.files);
+        const files = Array.from(event.target.files || []);
+        if (files.length === 0) return;
+
+        const hashedList = await Promise.all(
+          files.map(async (file) => ({ file, hash: await calculateFileHash(file) }))
+        );
+
+        const accumulated = new Set(clientHashes);
+        const pending = hashedList.filter(({ hash }) => !accumulated.has(hash));
+
+        if (pending.length === 0) {
+          return;
+        }
+
+        const serverDupSet = await checkServerDuplicates(
+          pathParam,
+          pending.map((p) => p.hash)
+        );
+
         const newDuplicateFiles = [];
+        const newDuplicateHashes = [];
         const newFiles = [];
         const newOriginalFiles = [];
         const newSelectedHashes = [];
-        const newDuplicateHashes = [];
 
-        const serverHashes = await fetchHashes(pathParam);
+        for (const { file, hash } of pending) {
+          const thumbnailBlob = await generateThumbnail(file);
+          const thumbnailFile = new File([thumbnailBlob], file.name, { type: "image/jpeg" });
 
-        const accumulated = new Set(clientHashes);
-
-        for (const file of files) {
-          const fileHash = await calculateFileHash(file);
-
-          if (accumulated.has(fileHash)) {
-            continue;
-          }
-
-          if (serverHashes.has(fileHash)) {
-            const thumbnailBlob = await generateThumbnail(file);
-            const thumbnailFile = new File([thumbnailBlob], file.name, { type: "image/jpeg" });
+          if (serverDupSet.has(hash)) {
             newDuplicateFiles.push(thumbnailFile);
-            newDuplicateHashes.push(fileHash);
+            newDuplicateHashes.push(hash);
           } else {
-            const thumbnailBlob = await generateThumbnail(file);
-            const thumbnailFile = new File([thumbnailBlob], file.name, { type: "image/jpeg" });
             newFiles.push(thumbnailFile);
             newOriginalFiles.push(file);
-            newSelectedHashes.push(fileHash);
+            newSelectedHashes.push(hash);
           }
 
-          accumulated.add(fileHash);
+          accumulated.add(hash);
         }
 
         setDuplicateFiles((prev) => [...prev, ...newDuplicateFiles]);
-        setSelectedFiles((prevFiles) => [...prevFiles, ...newFiles]);
-        setOriginalFiles((prevFiles) => [...prevFiles, ...newOriginalFiles]);
         setDuplicateHashes((prev) => [...prev, ...newDuplicateHashes]);
+        setSelectedFiles((prev) => [...prev, ...newFiles]);
+        setOriginalFiles((prev) => [...prev, ...newOriginalFiles]);
         setSelectedHashes((prev) => [...prev, ...newSelectedHashes]);
         setClientHashes(accumulated);
       } finally {
@@ -192,23 +197,22 @@ export default function usePhotoUpload() {
   const handleUpload = async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const pathParam = urlParams.get("path");
-
     if (!pathParam) {
       alert("Path parameter is missing.");
       return;
     }
 
     const chunks = [];
-    const hashes = [];
+    const hashChunks = [];
     for (let i = 0; i < originalFiles.length; i += CHUNK_SIZE) {
       chunks.push(originalFiles.slice(i, i + CHUNK_SIZE));
-      hashes.push(originalFiles.slice(i, i + CHUNK_SIZE).map(file => calculateFileHash(file)));
+      hashChunks.push(selectedHashes.slice(i, i + CHUNK_SIZE));
     }
 
     setIsUploading(true);
     try {
       for (let i = 0; i < chunks.length; i++) {
-        await uploadChunk(chunks[i], pathParam, await Promise.all(hashes[i]));
+        await uploadChunk(chunks[i], pathParam, hashChunks[i]);
       }
       alert("업로드되었습니다.");
       window.location.reload();
@@ -218,18 +222,6 @@ export default function usePhotoUpload() {
       setIsUploading(false);
     }
   };
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const pathParam = urlParams.get("path");
-
-    if (!pathParam) {
-      alert("Path parameter is missing.");
-      return;
-    }
-
-    fetchHashes(pathParam);
-  }, []);
 
   return {
     selectedFiles,
