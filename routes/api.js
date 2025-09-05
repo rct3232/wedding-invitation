@@ -48,6 +48,24 @@ module.exports = function(register) {
     register.registerMetric(apiRequestDurationSeconds);
   }
 
+  // Helper: cleanup partial artifacts created by chunked uploads
+  const cleanupArtifacts = async (fileId, tmpDir, finalPath) => {
+    if (!fileId || !tmpDir) return;
+    try {
+      const files = await fs.readdir(tmpDir);
+      await Promise.all(
+        files
+          .filter((name) => name.startsWith(`${fileId}.`) && name.endsWith('.part'))
+          .map((name) => fs.unlink(path.join(tmpDir, name)).catch(() => {}))
+      );
+      if (finalPath && fsSync.existsSync(finalPath)) {
+        await fs.unlink(finalPath).catch(() => {});
+      }
+    } catch {
+      // ignore cleanup errors
+    }
+  };
+
   router.get('/data/:query', async (req, res) => {
     const route = '/data';
     const method = 'GET';
@@ -206,7 +224,7 @@ module.exports = function(register) {
     let statusCode = 200;
 
     const imagePath = path.join(__dirname, '..', 'data', query, 'full', image);
-    fs.access(imagePath, fs.constants.F_OK)
+    fs.access(imagePath)
       .then(() => {
         res.sendFile(imagePath, (err) => {
           if (err) {
@@ -217,7 +235,7 @@ module.exports = function(register) {
           apiRequestsTotal.labels(route, method, statusCode, query).inc();
         });
       })
-      .catch((err) => {
+      .catch(() => {
         statusCode = 404;
         reqLogger(req, `Error Image not found: ${imagePath}`);
         res.status(404).json({ error: 'Image not found' });
@@ -298,79 +316,6 @@ module.exports = function(register) {
     }
   });
 
-  router.post("/photo-upload/:query", async (req, res) => {
-    const query = req.params.query;
-    if (!query) {
-      reqLogger(req, 'Query parameter is required');
-      return res.status(400).json({ message: "잘못된 접근입니다." });
-    }
-
-    const uploadDir = path.join(__dirname, "../data/", query, "/uploads");
-    const hashFilePath = path.join(__dirname, "../data/uploadhash.json");
-
-    if (!fsSync.existsSync(uploadDir)) {
-      fsSync.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    let uploadHash = {};
-    try {
-      const hashFileContent = await fs.readFile(hashFilePath, 'utf8');
-      uploadHash = JSON.parse(hashFileContent);
-    } catch (err) {
-      if (err.code !== 'ENOENT') {
-        reqLogger(req, "Error reading uploadhash.json:", err);
-        return res.status(500).json({ message: "서버 내부 에러가 발생했습니다." });
-      }
-    }
-
-    if (!uploadHash[query]) {
-      uploadHash[query] = {};
-    }
-
-    const storage = multer.diskStorage({
-      destination: (req, file, cb) => {
-        cb(null, uploadDir);
-      },
-      filename: (req, file, cb) => {
-        const fileCount = Object.keys(uploadHash[query]).length;
-        const newFileName = `${fileCount + Object.keys(req.files || {}).length}.jpg`;
-        cb(null, newFileName);
-      },
-    });
-
-    const upload = multer({ storage }).array("photos", 10);
-
-    upload(req, res, async (err) => {
-      if (err) {
-        reqLogger(req, 'Error uploading chunk', err);
-        return res.status(500).json({ message: "업로드에 실패했습니다." });
-      }
-
-      const clientHashes = req.body.hashes;
-
-      try {
-        for (let i = 0; i < req.files.length; i++) {
-          const file = req.files[i];
-          const clientHash = clientHashes[i];
-
-          uploadHash[query][file.filename] = clientHash;
-        }
-
-        await fs.writeFile(hashFilePath, JSON.stringify(uploadHash, null, 2));
-        res.status(200).json({
-          message: "업로드에 성공했습니다!",
-          files: req.files.map((file, index) => ({
-            id: file.filename,
-            clientHash: clientHashes[index],
-          })),
-        });
-      } catch (error) {
-        reqLogger(req, "Error processing uploaded files:", error);
-        res.status(500).json({ message: "업로드에 실패했습니다." });
-      }
-    });
-  });
-
   // New: Chunked upload endpoint per photo
   router.post("/photo-upload-chunk/:query", (req, res) => {
     const route = '/photo-upload-chunk';
@@ -389,6 +334,8 @@ module.exports = function(register) {
         apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
         return res.status(500).json({ message: "업로드에 실패했습니다." });
       }
+
+      let finalPath; // will be set if we reached assembly stage
 
       try {
         if (!query) {
@@ -434,12 +381,14 @@ module.exports = function(register) {
         }
 
         // Last chunk received: assemble all parts in order
-        // Verify all parts exist (assuming ordered upload; this will pass)
+        // Verify all parts exist
         for (let i = 0; i < total; i++) {
           const p = path.join(tmpDir, `${fileId}.${i}.part`);
           if (!fsSync.existsSync(p)) {
             statusCode = 400;
             reqLogger(req, `Missing part file: ${p}`);
+            // Cleanup all partial parts for this fileId
+            await cleanupArtifacts(fileId, tmpDir, undefined);
             end();
             apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
             return res.status(400).json({ message: "누락된 청크가 있습니다." });
@@ -456,6 +405,8 @@ module.exports = function(register) {
           if (e.code !== "ENOENT") {
             statusCode = 500;
             reqLogger(req, "Error reading uploadhash.json", e);
+            // cleanup parts on fatal error
+            await cleanupArtifacts(fileId, tmpDir, undefined);
             end();
             apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
             return res.status(500).json({ message: "서버 내부 에러가 발생했습니다." });
@@ -466,7 +417,7 @@ module.exports = function(register) {
         // Create next file name
         const nextIndex = Object.keys(uploadHash[query]).length + 1;
         const finalName = `${nextIndex}.jpg`;
-        const finalPath = path.join(uploadDir, finalName);
+        finalPath = path.join(uploadDir, finalName);
 
         // Assemble parts into final file
         for (let i = 0; i < total; i++) {
@@ -489,6 +440,13 @@ module.exports = function(register) {
       } catch (e) {
         statusCode = 500;
         reqLogger(req, 'Error processing chunked upload', e);
+        // Best-effort cleanup of partial chunks and partially assembled file
+        try {
+          const { fileId } = req.body || {};
+          const baseDir = path.join(__dirname, "../data/", req.params.query || "");
+          const tmpDir = path.join(baseDir, "uploads_tmp");
+          await cleanupArtifacts(fileId, tmpDir, finalPath);
+        } catch {}
         res.status(500).json({ message: "업로드에 실패했습니다." });
       } finally {
         end();

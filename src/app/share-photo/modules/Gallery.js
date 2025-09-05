@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo } from "react";
+import { memo } from "react";
 import FileInput from "./FileInput";
 import styles from "../page.module.css";
 
@@ -69,7 +69,11 @@ export default function Gallery({
 }) {
   return (
     <div className={styles.gallery}>
-      <FileInput handleFileChange={handleFileChange} isSelecting={isSelecting} />
+      <FileInput
+        handleFileChange={handleFileChange}
+        isSelecting={isSelecting}
+        uploadStarted={uploadStarted}
+      />
       {[...selectedFiles, ...duplicateFiles].map((file, index) => {
         const isDuplicate = index >= selectedFiles.length;
         const progress = isDuplicate ? null : (uploadProgress[index] ?? 0);

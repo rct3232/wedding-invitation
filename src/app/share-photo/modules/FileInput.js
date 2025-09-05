@@ -1,14 +1,9 @@
 'use client';
 
-import React, { useRef } from "react";
 import styles from "../page.module.css";
 
-export default function FileInput({ handleFileChange, isSelecting }) {
-  const fileInputRef = useRef(null);
-
-  const onChange = (event) => {
-    handleFileChange(event);
-  };
+export default function FileInput({ handleFileChange, isSelecting, uploadStarted = false }) {
+  const disabled = uploadStarted;
 
   return (
     <>
@@ -17,7 +12,7 @@ export default function FileInput({ handleFileChange, isSelecting }) {
           <div className={styles.spinner}></div>
         </div>
       )}
-      <div className={styles.addButtonContainer}>
+      <div className={`${styles.addButtonContainer} ${disabled ? styles.addDisabled : ''}`}>
         <label htmlFor="fileInput" className={styles.addButton}>
           <img src="/add-image.png" alt="+" style={{ width: '40%', height: 'auto' }} />
         </label>
@@ -26,9 +21,9 @@ export default function FileInput({ handleFileChange, isSelecting }) {
           type="file"
           multiple
           accept="image/*,image/heic"
-          onChange={onChange}
+          onChange={handleFileChange}
           className={styles.hiddenInput}
-          ref={fileInputRef}
+          disabled={disabled}
         />
       </div>
     </>

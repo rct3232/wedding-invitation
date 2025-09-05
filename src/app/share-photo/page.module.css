@@ -96,6 +96,12 @@
   background-color: var(--background);
 }
 
+.addDisabled {
+  opacity: 0.4;
+  filter: grayscale(20%);
+  pointer-events: none; /* prevent click while uploading */
+}
+
 .hiddenInput {
   display: none;
 }
@@ -147,6 +153,19 @@
 
 .progressComplete .progressFill {
   background: #4caf50;
+}
+
+.globalProgressWrap {
+  width: min(420px, 90%);
+  margin: 20px auto;
+  text-align: center;
+}
+
+.globalProgressLabel {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--foreground);
+  opacity: 0.8;
 }
 
 .removeButton {

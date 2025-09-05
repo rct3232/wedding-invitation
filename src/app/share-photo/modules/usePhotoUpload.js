@@ -14,8 +14,28 @@ export default function usePhotoUpload() {
   const [duplicateHashes, setDuplicateHashes] = useState([]);
   const [uploadProgress, setUploadProgress] = useState([]);
   const [uploadStarted, setUploadStarted] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState([]);
 
   const CHUNK_BYTE_SIZE = 512 * 1024;
+
+  const getRecommendedConcurrency = () => {
+    const c = typeof navigator !== 'undefined'
+      ? (navigator.connection || navigator.mozConnection || navigator.webkitConnection)
+      : null;
+
+    if (!c) return 2;
+
+    if (c.saveData) return 1;
+    const type = (c.effectiveType || '').toLowerCase();
+    const down = Number(c.downlink || 0);
+    const rtt = Number(c.rtt || 0);
+
+    if (type.includes('2g')) return 1;
+    if (type === '3g') return 1;
+    if (down < 1.5 || rtt > 300) return 1;
+    if (down < 5 || rtt > 150) return 2;
+    return 3;
+  };
 
   const calculateFileHash = async (file) => {
     const arrayBuffer = await file.arrayBuffer();
@@ -122,6 +142,7 @@ export default function usePhotoUpload() {
         const newOriginalFiles = [];
         const newSelectedHashes = [];
         const newProgress = [];
+        const newStatus = [];
 
         for (const { file, hash } of pending) {
           const thumbnailBlob = await generateThumbnail(file);
@@ -135,6 +156,7 @@ export default function usePhotoUpload() {
             newOriginalFiles.push(file);
             newSelectedHashes.push(hash);
             newProgress.push(0);
+            newStatus.push('idle');
           }
 
           accumulated.add(hash);
@@ -147,6 +169,7 @@ export default function usePhotoUpload() {
         setSelectedHashes((prev) => [...prev, ...newSelectedHashes]);
         setClientHashes(accumulated);
         setUploadProgress((prev) => [...prev, ...newProgress]);
+        setUploadStatus((prev) => [...prev, ...newStatus]);
       } finally {
         setIsSelecting(false);
       }
@@ -173,6 +196,7 @@ export default function usePhotoUpload() {
       setOriginalFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
       setSelectedHashes((prev) => prev.filter((_, i) => i !== index));
       setUploadProgress((prev) => prev.filter((_, i) => i !== index));
+      setUploadStatus((prev) => prev.filter((_, i) => i !== index));
       setClientHashes((prev) => {
         const next = new Set(prev);
         if (hashToRemove) next.delete(hashToRemove);
@@ -183,6 +207,17 @@ export default function usePhotoUpload() {
   };
 
   const uploadFileInChunks = async (file, fileHash, pathParam, fileIndex) => {
+    setUploadProgress((prev) => {
+      const next = [...prev];
+      next[fileIndex] = 0;
+      return next;
+    });
+    setUploadStatus((prev) => {
+      const next = [...prev];
+      next[fileIndex] = 'uploading';
+      return next;
+    });
+
     const totalChunks = Math.ceil(file.size / CHUNK_BYTE_SIZE);
     for (let idx = 0; idx < totalChunks; idx++) {
       const start = idx * CHUNK_BYTE_SIZE;
@@ -210,6 +245,17 @@ export default function usePhotoUpload() {
         return next;
       });
     }
+
+    setUploadStatus((prev) => {
+      const next = [...prev];
+      next[fileIndex] = 'done';
+      return next;
+    });
+    setUploadProgress((prev) => {
+      const next = [...prev];
+      next[fileIndex] = 100;
+      return next;
+    });
   };
 
   const handleUpload = async () => {
@@ -225,18 +271,82 @@ export default function usePhotoUpload() {
       return;
     }
 
+    const pendingIndices = selectedFiles
+      .map((_, i) => i)
+      .filter((i) => uploadStatus[i] !== 'done');
+
+    if (pendingIndices.length === 0) {
+      alert("이미 업로드가 완료되었습니다.");
+      return;
+    }
+
     try {
+      setClientHashes((prev) => {
+        const next = new Set(prev);
+        duplicateHashes.forEach((h) => { if (h) next.delete(h); });
+        return next;
+      });
+      setDuplicateFiles([]);
+      setDuplicateHashes([]);
+      setHoveredIndex(null);
+
       setUploadStarted(true);
-      for (let i = 0; i < originalFiles.length; i++) {
-        await uploadFileInChunks(originalFiles[i], selectedHashes[i], pathParam, i);
+
+      const concurrency = Math.max(1, Math.min(getRecommendedConcurrency(), pendingIndices.length));
+      let cursor = 0;
+
+      const completed = new Set();
+      const failed = new Set();
+
+      const worker = async () => {
+        while (cursor < pendingIndices.length) {
+          const i = pendingIndices[cursor++];
+          try {
+            await uploadFileInChunks(originalFiles[i], selectedHashes[i], pathParam, i);
+            completed.add(i);
+          } catch {
+            failed.add(i);
+            setUploadStatus((prev) => {
+              const next = [...prev];
+              next[i] = 'failed';
+              return next;
+            });
+          }
+        }
+      };
+
+      await Promise.all(Array.from({ length: concurrency }, () => worker()));
+
+      if (completed.size > 0) {
+        const keep = (arr) => arr.filter((_, idx) => !completed.has(idx));
+        const hashesToRemove = selectedHashes.filter((_, idx) => completed.has(idx));
+
+        setSelectedFiles((prev) => keep(prev));
+        setOriginalFiles((prev) => keep(prev));
+        setSelectedHashes((prev) => keep(prev));
+        setUploadProgress((prev) => keep(prev));
+        setUploadStatus((prev) => keep(prev));
+        setClientHashes((prev) => {
+          const next = new Set(prev);
+          hashesToRemove.forEach((h) => { if (h) next.delete(h); });
+          return next;
+        });
       }
 
-      alert("업로드되었습니다.");
-      window.location.reload();
-    } catch (error) {
-      alert("업로드에 실패했습니다.");
+      if (failed.size > 0) {
+        alert("일부 사진 업로드에 실패했습니다. 다시 시도해주세요.");
+      } else {
+        alert("업로드되었습니다.");
+      }
+    } finally {
+      setUploadStarted(false);
     }
   };
+
+  const overallProgress =
+    uploadProgress.length > 0
+      ? Math.round(uploadProgress.reduce((a, b) => a + (b || 0), 0) / uploadProgress.length)
+      : 0;
 
   return {
     selectedFiles,
@@ -249,5 +359,6 @@ export default function usePhotoUpload() {
     isSelecting,
     uploadProgress,
     uploadStarted,
+    overallProgress,
   };
 }
