@@ -371,6 +371,132 @@ module.exports = function(register) {
     });
   });
 
+  // New: Chunked upload endpoint per photo
+  router.post("/photo-upload-chunk/:query", (req, res) => {
+    const route = '/photo-upload-chunk';
+    const method = 'POST';
+    const { query } = req.params;
+    const end = apiRequestDurationSeconds.startTimer({ route, method, query_param: query });
+    let statusCode = 200;
+
+    const memoryUpload = multer({ storage: multer.memoryStorage() }).single("chunk");
+
+    memoryUpload(req, res, async (err) => {
+      if (err) {
+        statusCode = 500;
+        reqLogger(req, 'Error receiving chunk', err);
+        end();
+        apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
+        return res.status(500).json({ message: "업로드에 실패했습니다." });
+      }
+
+      try {
+        if (!query) {
+          statusCode = 400;
+          end();
+          apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
+          return res.status(400).json({ message: "잘못된 접근입니다." });
+        }
+
+        const { fileId, chunkIndex, totalChunks, originalName, hash } = req.body || {};
+        if (!req.file || !fileId || chunkIndex === undefined || !totalChunks || !hash) {
+          statusCode = 400;
+          end();
+          apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
+          return res.status(400).json({ message: "필수 파라미터가 누락되었습니다." });
+        }
+
+        const idx = parseInt(chunkIndex, 10);
+        const total = parseInt(totalChunks, 10);
+        if (Number.isNaN(idx) || Number.isNaN(total) || total <= 0) {
+          statusCode = 400;
+          end();
+          apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
+          return res.status(400).json({ message: "청크 인덱스가 올바르지 않습니다." });
+        }
+
+        const baseDir = path.join(__dirname, "../data/", query);
+        const tmpDir = path.join(baseDir, "uploads_tmp");
+        const uploadDir = path.join(baseDir, "uploads");
+        if (!fsSync.existsSync(tmpDir)) fsSync.mkdirSync(tmpDir, { recursive: true });
+        if (!fsSync.existsSync(uploadDir)) fsSync.mkdirSync(uploadDir, { recursive: true });
+
+        // Save this chunk as a part file
+        const partPath = path.join(tmpDir, `${fileId}.${idx}.part`);
+        await fs.writeFile(partPath, req.file.buffer);
+
+        // If this is not the last chunk, return early with progress ack
+        if (idx < total - 1) {
+          res.status(200).json({ received: true, chunkIndex: idx, totalChunks: total });
+          end();
+          apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
+          return;
+        }
+
+        // Last chunk received: assemble all parts in order
+        // Verify all parts exist (assuming ordered upload; this will pass)
+        for (let i = 0; i < total; i++) {
+          const p = path.join(tmpDir, `${fileId}.${i}.part`);
+          if (!fsSync.existsSync(p)) {
+            statusCode = 400;
+            reqLogger(req, `Missing part file: ${p}`);
+            end();
+            apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
+            return res.status(400).json({ message: "누락된 청크가 있습니다." });
+          }
+        }
+
+        // Load or init uploadhash.json
+        const hashFilePath = path.join(__dirname, "../data/uploadhash.json");
+        let uploadHash = {};
+        try {
+          const content = await fs.readFile(hashFilePath, "utf8");
+          uploadHash = JSON.parse(content);
+        } catch (e) {
+          if (e.code !== "ENOENT") {
+            statusCode = 500;
+            reqLogger(req, "Error reading uploadhash.json", e);
+            end();
+            apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
+            return res.status(500).json({ message: "서버 내부 에러가 발생했습니다." });
+          }
+        }
+        if (!uploadHash[query]) uploadHash[query] = {};
+
+        // Create next file name
+        const nextIndex = Object.keys(uploadHash[query]).length + 1;
+        const finalName = `${nextIndex}.jpg`;
+        const finalPath = path.join(uploadDir, finalName);
+
+        // Assemble parts into final file
+        for (let i = 0; i < total; i++) {
+          const p = path.join(tmpDir, `${fileId}.${i}.part`);
+          const buf = await fs.readFile(p);
+          fsSync.appendFileSync(finalPath, buf);
+        }
+
+        // Cleanup parts
+        for (let i = 0; i < total; i++) {
+          const p = path.join(tmpDir, `${fileId}.${i}.part`);
+          try { await fs.unlink(p); } catch {}
+        }
+
+        // Save hash mapping
+        uploadHash[query][finalName] = hash;
+        await fs.writeFile(hashFilePath, JSON.stringify(uploadHash, null, 2));
+
+        res.status(200).json({ done: true, id: finalName, originalName: originalName || null });
+      } catch (e) {
+        statusCode = 500;
+        reqLogger(req, 'Error processing chunked upload', e);
+        res.status(500).json({ message: "업로드에 실패했습니다." });
+      } finally {
+        end();
+        apiRequestsTotal.labels(route, method, statusCode, query || '').inc();
+      }
+    });
+  });
+
   router.post("/photo-hash-check/:query", async (req, res) => {
     const route = '/photo-hash-check';
     const method = 'POST';

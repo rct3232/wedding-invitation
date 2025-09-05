@@ -15,8 +15,9 @@ export default function SharePhotoPage() {
     handleUpload,
     hoveredIndex,
     setHoveredIndex,
-    isUploading,
-  isSelecting,
+    isSelecting,
+    uploadProgress,
+    uploadStarted,
   } = usePhotoUpload();
 
   const handleResetHover = () => setHoveredIndex(null);
@@ -70,6 +71,8 @@ export default function SharePhotoPage() {
             handleRemovePhoto={handleRemovePhoto}
             handleFileChange={handleFileChange}
             isSelecting={isSelecting}
+            uploadProgress={uploadProgress}
+            uploadStarted={uploadStarted}
           />
         </div>
       </div>
@@ -79,7 +82,7 @@ export default function SharePhotoPage() {
         </div>
       )}
       {selectedFiles.length > 0 && (
-        <UploadButton handleUpload={handleUpload} isUploading={isUploading} />
+        <UploadButton handleUpload={handleUpload} />
       )}
     </div>
   );

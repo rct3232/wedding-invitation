@@ -7,14 +7,15 @@ export default function usePhotoUpload() {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [duplicateFiles, setDuplicateFiles] = useState([]);
   const [hoveredIndex, setHoveredIndex] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [originalFiles, setOriginalFiles] = useState([]);
   const [isSelecting, setIsSelecting] = useState(false);
   const [clientHashes, setClientHashes] = useState(new Set());
   const [selectedHashes, setSelectedHashes] = useState([]);
   const [duplicateHashes, setDuplicateHashes] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState([]);
+  const [uploadStarted, setUploadStarted] = useState(false);
 
-  const CHUNK_SIZE = 3;
+  const CHUNK_BYTE_SIZE = 512 * 1024;
 
   const calculateFileHash = async (file) => {
     const arrayBuffer = await file.arrayBuffer();
@@ -120,6 +121,7 @@ export default function usePhotoUpload() {
         const newFiles = [];
         const newOriginalFiles = [];
         const newSelectedHashes = [];
+        const newProgress = [];
 
         for (const { file, hash } of pending) {
           const thumbnailBlob = await generateThumbnail(file);
@@ -132,6 +134,7 @@ export default function usePhotoUpload() {
             newFiles.push(thumbnailFile);
             newOriginalFiles.push(file);
             newSelectedHashes.push(hash);
+            newProgress.push(0);
           }
 
           accumulated.add(hash);
@@ -143,6 +146,7 @@ export default function usePhotoUpload() {
         setOriginalFiles((prev) => [...prev, ...newOriginalFiles]);
         setSelectedHashes((prev) => [...prev, ...newSelectedHashes]);
         setClientHashes(accumulated);
+        setUploadProgress((prev) => [...prev, ...newProgress]);
       } finally {
         setIsSelecting(false);
       }
@@ -168,6 +172,7 @@ export default function usePhotoUpload() {
       setSelectedFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
       setOriginalFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
       setSelectedHashes((prev) => prev.filter((_, i) => i !== index));
+      setUploadProgress((prev) => prev.filter((_, i) => i !== index));
       setClientHashes((prev) => {
         const next = new Set(prev);
         if (hashToRemove) next.delete(hashToRemove);
@@ -177,20 +182,33 @@ export default function usePhotoUpload() {
     setHoveredIndex(null);
   };
 
-  const uploadChunk = async (chunk, pathParam, hashes) => {
-    const formData = new FormData();
-    chunk.forEach((file, index) => {
-      formData.append("photos", file);
-      formData.append("hashes", hashes[index]);
-    });
+  const uploadFileInChunks = async (file, fileHash, pathParam, fileIndex) => {
+    const totalChunks = Math.ceil(file.size / CHUNK_BYTE_SIZE);
+    for (let idx = 0; idx < totalChunks; idx++) {
+      const start = idx * CHUNK_BYTE_SIZE;
+      const end = Math.min(start + CHUNK_BYTE_SIZE, file.size);
+      const chunk = file.slice(start, end);
 
-    const response = await fetch(`/api/photo-upload/${encodeURIComponent(pathParam)}`, {
-      method: "POST",
-      body: formData,
-    });
+      const formData = new FormData();
+      formData.append("chunk", chunk, file.name);
+      formData.append("fileId", fileHash);
+      formData.append("chunkIndex", String(idx));
+      formData.append("totalChunks", String(totalChunks));
+      formData.append("originalName", file.name);
+      formData.append("hash", fileHash);
 
-    if (!response.ok) {
-      throw new Error("업로드에 실패했습니다.");
+      const response = await fetch(`/api/photo-upload-chunk/${encodeURIComponent(pathParam)}`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) throw new Error("업로드에 실패했습니다.");
+
+      const percent = Math.round(((idx + 1) / totalChunks) * 100);
+      setUploadProgress((prev) => {
+        const next = [...prev];
+        next[fileIndex] = percent;
+        return next;
+      });
     }
   };
 
@@ -202,24 +220,21 @@ export default function usePhotoUpload() {
       return;
     }
 
-    const chunks = [];
-    const hashChunks = [];
-    for (let i = 0; i < originalFiles.length; i += CHUNK_SIZE) {
-      chunks.push(originalFiles.slice(i, i + CHUNK_SIZE));
-      hashChunks.push(selectedHashes.slice(i, i + CHUNK_SIZE));
+    if (originalFiles.length === 0) {
+      alert("업로드할 사진이 없습니다.");
+      return;
     }
 
-    setIsUploading(true);
     try {
-      for (let i = 0; i < chunks.length; i++) {
-        await uploadChunk(chunks[i], pathParam, hashChunks[i]);
+      setUploadStarted(true);
+      for (let i = 0; i < originalFiles.length; i++) {
+        await uploadFileInChunks(originalFiles[i], selectedHashes[i], pathParam, i);
       }
+
       alert("업로드되었습니다.");
       window.location.reload();
     } catch (error) {
       alert("업로드에 실패했습니다.");
-    } finally {
-      setIsUploading(false);
     }
   };
 
@@ -231,7 +246,8 @@ export default function usePhotoUpload() {
     handleUpload,
     hoveredIndex,
     setHoveredIndex,
-    isUploading,
     isSelecting,
+    uploadProgress,
+    uploadStarted,
   };
 }

@@ -3,21 +3,13 @@
 import React from "react";
 import styles from "../page.module.css";
 
-export default function UploadButton({ handleUpload, isUploading }) {
+export default function UploadButton({ handleUpload }) {
   return (
-    <>
-      {isUploading && (
-        <div className={styles.loadingOverlay}>
-          <div className={styles.spinner}></div>
-        </div>
-      )}
-      <button
-        onClick={handleUpload}
-        className={styles.submit}
-        disabled={isUploading}
-      >
-        전송하기
-      </button>
-    </>
+    <button
+      onClick={handleUpload}
+      className={styles.submit}
+    >
+      전송하기
+    </button>
   );
 }
