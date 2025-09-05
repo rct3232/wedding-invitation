@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo } from "react";
+import { memo } from "react";
 import FileInput from "./FileInput";
 import styles from "../page.module.css";
 
@@ -11,7 +11,18 @@ const GalleryItem = memo(function GalleryItem({
   hoveredIndex,
   setHoveredIndex,
   handleRemovePhoto,
+  progress = null,
+  uploadStarted = false,
 }) {
+  const showProgress =
+    uploadStarted &&
+    !isDuplicate &&
+    typeof progress === 'number' &&
+    progress >= 0 &&
+    progress <= 100;
+
+  const overlayClass = `${styles.progressOverlay} ${progress === 100 ? styles.progressComplete : ''}`;
+
   return (
     <div
       className={`${styles.detail} ${
@@ -26,6 +37,13 @@ const GalleryItem = memo(function GalleryItem({
         alt={`Thumbnail ${index + 1}`}
         className={isDuplicate ? styles.darkened : ""}
       />
+      {showProgress && (
+        <div className={overlayClass} style={{ ['--progress']: `${progress}%` }}>
+          <div className={styles.progressTrack}>
+            <div className={styles.progressFill} />
+          </div>
+        </div>
+      )}
       {hoveredIndex === index && (
         <button
           className={styles.removeButton}
@@ -46,12 +64,19 @@ export default function Gallery({
   handleRemovePhoto,
   handleFileChange,
   isSelecting,
+  uploadProgress = [],
+  uploadStarted = false,
 }) {
   return (
     <div className={styles.gallery}>
-      <FileInput handleFileChange={handleFileChange} isSelecting={isSelecting} />
+      <FileInput
+        handleFileChange={handleFileChange}
+        isSelecting={isSelecting}
+        uploadStarted={uploadStarted}
+      />
       {[...selectedFiles, ...duplicateFiles].map((file, index) => {
         const isDuplicate = index >= selectedFiles.length;
+        const progress = isDuplicate ? null : (uploadProgress[index] ?? 0);
         return (
           <GalleryItem
             key={index}
@@ -61,6 +86,8 @@ export default function Gallery({
             hoveredIndex={hoveredIndex}
             setHoveredIndex={setHoveredIndex}
             handleRemovePhoto={handleRemovePhoto}
+            progress={progress}
+            uploadStarted={uploadStarted}
           />
         );
       })}

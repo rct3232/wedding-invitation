@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
 import Gallery from "./modules/Gallery";
 import UploadButton from "./modules/UploadButton";
@@ -15,8 +15,10 @@ export default function SharePhotoPage() {
     handleUpload,
     hoveredIndex,
     setHoveredIndex,
-    isUploading,
-  isSelecting,
+    isSelecting,
+    uploadProgress,
+    uploadStarted,
+    overallProgress,
   } = usePhotoUpload();
 
   const handleResetHover = () => setHoveredIndex(null);
@@ -37,7 +39,7 @@ export default function SharePhotoPage() {
     setOffBottom(canScroll && !atBottom);
   };
 
-  const onScroll = (e) => {
+  const onScroll = () => {
     if (rafLock.current) return;
     rafLock.current = true;
     window.requestAnimationFrame(() => {
@@ -70,16 +72,26 @@ export default function SharePhotoPage() {
             handleRemovePhoto={handleRemovePhoto}
             handleFileChange={handleFileChange}
             isSelecting={isSelecting}
+            uploadProgress={uploadProgress}
+            uploadStarted={uploadStarted}
           />
         </div>
       </div>
-      {duplicateFiles.length > 0 && (
-        <div className="little">
-          중복된 사진은 서버로 전송되지 않습니다. 중복된 사진: {duplicateFiles.length}개
-        </div>
+      {uploadStarted ? (
+        <div className="little">페이지를 벗어나지 마세요!</div>
+      ) : (
+        duplicateFiles.length > 0 && (
+          <div className="little">
+            중복된 사진은 서버로 전송되지 않습니다. 중복된 사진: {duplicateFiles.length}개
+          </div>
+        )
       )}
       {selectedFiles.length > 0 && (
-        <UploadButton handleUpload={handleUpload} isUploading={isUploading} />
+        <UploadButton
+          handleUpload={handleUpload}
+          uploadStarted={uploadStarted}
+          overallProgress={overallProgress}
+        />
       )}
     </div>
   );
