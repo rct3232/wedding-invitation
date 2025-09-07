@@ -34,10 +34,8 @@ module.exports = function(register) {
     register.registerMetric(apiRequestDurationSeconds);
   }
 
-  /* ----------------------------- Helper Utilities ---------------------------- */
   const withMetrics = createMetricsWrapper(apiRequestDurationSeconds, apiRequestsTotal);
 
-  /* --------------------------------- /data ---------------------------------- */
   router.get('/data/:query', withMetrics('/data', 'GET', async (req, res) => {
     const { query } = req.params;
     try {
@@ -160,7 +158,6 @@ module.exports = function(register) {
     }
   }));
 
-  // New: Chunked upload endpoint per photo
   router.post('/photo-upload-chunk/:query', withMetrics('/photo-upload-chunk', 'POST', (req, res) => {
     const { query } = req.params;
     const memoryUpload = multer({ storage: multer.memoryStorage() }).single('chunk');

@@ -2,7 +2,6 @@ const fs = require('fs').promises;
 const path = require('path');
 const fsSync = require('fs');
 
-// Request logger utility
 function reqLogger(req, msg, err) {
   const timestamp   = new Date().toISOString();
   const clientIp    = req.headers['x-forwarded-for']
@@ -17,7 +16,6 @@ function reqLogger(req, msg, err) {
   }
 }
 
-// Helper: cleanup partial artifacts created by chunked uploads
 async function cleanupArtifacts(fileId, tmpDir, finalPath) {
   if (!fileId || !tmpDir) return;
   try {
@@ -31,16 +29,13 @@ async function cleanupArtifacts(fileId, tmpDir, finalPath) {
       await fs.unlink(finalPath).catch(() => {});
     }
   } catch {
-    // ignore cleanup errors
   }
 }
 
 module.exports = {
   reqLogger,
   cleanupArtifacts,
-  // Return absolute path inside data directory
   getDataPath: (...segments) => path.join(__dirname, '..', 'data', ...segments),
-  // Safe JSON reader with optional default when file missing
   safeReadJSON: async (filePath, defaultValue) => {
     try {
       const content = await fs.readFile(filePath, 'utf8');
@@ -50,7 +45,6 @@ module.exports = {
       throw e;
     }
   },
-  // Factory to create metrics wrapper without circular dependency
   createMetricsWrapper: (apiRequestDurationSeconds, apiRequestsTotal) => (route, method, handler) => {
     return async function wrapped(req, res, next) {
       const queryParam = req.params.query || '';
