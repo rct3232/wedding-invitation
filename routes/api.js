@@ -4,7 +4,8 @@ const path = require('path');
 const promClient = require('prom-client');
 const multer = require('multer');
 const fsSync = require('fs');
-const { reqLogger, cleanupArtifacts, getDataPath, safeReadJSON, createMetricsWrapper } = require('./apiUtils');
+const { reqLogger, cleanupArtifacts, getDataPath, createMetricsWrapper } = require('./apiUtils');
+const { getInvitationData, addGuestbookEntry, getGuestbookEntries, getNextUploadIndex, addUploadHash, checkDuplicateHashes } = require('./db');
 
 module.exports = function(register) {
   const router = express.Router();
@@ -39,10 +40,9 @@ module.exports = function(register) {
   router.get('/data/:query', withMetrics('/data', 'GET', async (req, res) => {
     const { query } = req.params;
     try {
-      const jsonDataAll = await safeReadJSON(getDataPath('data.json'));
-      const jsonData = jsonDataAll[query];
-      if (!jsonData) {
-        return res.status(404).json({ success: false, error: '해당 JSON 파일이나 폴더를 찾을 수 없습니다.' });
+      const invitationData = getInvitationData(query);
+      if (!invitationData) {
+        return res.status(404).json({ success: false, error: '해당 초대 데이터를 찾을 수 없습니다.' });
       }
 
       const folderPath = getDataPath(query, 'full');
@@ -51,16 +51,16 @@ module.exports = function(register) {
         fs.readdir(folderPath)
       ]);
 
-      const resultData = {};
-      resultData.person = jsonData.person.map(p => ({ name: p.name, color: p.color }));
-      resultData.relation = jsonData.person.map(p => ({
+  const resultData = {};
+  resultData.person = invitationData.person.map(p => ({ name: p.name, color: p.color }));
+  resultData.relation = invitationData.person.map(p => ({
         parent: p.parent.map(parentObj => parentObj.name),
         title: p.order,
         name: p.name.kor.last + p.name.kor.first
       }));
-      resultData.content = jsonData.content;
-      resultData.place = jsonData.place;
-      resultData.account = jsonData.person.map(p => {
+  resultData.content = invitationData.content;
+  resultData.place = invitationData.place;
+  resultData.account = invitationData.person.map(p => {
         const baseInfo = {
           title: p.title,
           name: p.name.kor.last + p.name.kor.first,
@@ -87,9 +87,9 @@ module.exports = function(register) {
       const headerImage = (await fs.readFile(headerPath)).toString('base64');
       res.json({ success: true, headerImage, data: resultData, images });
     } catch (error) {
-      reqLogger(req, 'Error occur during data process', error);
+      reqLogger(req, 'Error during invitation data process', error);
       if (error.code === 'ENOENT') {
-        return res.status(404).json({ success: false, error: '해당 JSON 파일이나 폴더를 찾을 수 없습니다.' });
+        return res.status(404).json({ success: false, error: '관련 리소스를 찾을 수 없습니다.' });
       }
       res.status(500).json({ success: false, error: '서버 내부 에러가 발생했습니다.' });
     }
@@ -132,12 +132,8 @@ module.exports = function(register) {
     if (!message || !name) {
       return res.status(400).json({ success: false, error: '메시지와 이름을 입력해야 합니다.' });
     }
-    const guestbookFilePath = getDataPath('guestbook.json');
     try {
-      const guestbookData = await safeReadJSON(guestbookFilePath, {});
-      if (!guestbookData[query]) guestbookData[query] = [];
-      guestbookData[query].push({ message, name });
-      await fs.writeFile(guestbookFilePath, JSON.stringify(guestbookData, null, 2));
+      addGuestbookEntry(query, name, message);
       res.json({ success: true, message: '방명록 작성이 성공적으로 저장되었습니다.' });
     } catch (error) {
       reqLogger(req, 'Error occur during guestbook write', error);
@@ -147,10 +143,8 @@ module.exports = function(register) {
 
   router.get('/guestbook/read/:query', withMetrics('/guestbook/read', 'GET', async (req, res) => {
     const { query } = req.params;
-    const guestbookFilePath = getDataPath('guestbook.json');
     try {
-      const guestbookData = await safeReadJSON(guestbookFilePath, {});
-      const entries = guestbookData[query] || [];
+      const entries = getGuestbookEntries(query);
       res.json({ success: true, entries });
     } catch (err) {
       reqLogger(req, 'Error occur during guestbook read', err);
@@ -194,21 +188,8 @@ module.exports = function(register) {
             return res.status(400).json({ message: '누락된 청크가 있습니다.' });
           }
         }
-        const hashFilePath = getDataPath('uploadhash.json');
-        let uploadHash = {};
-        try {
-          const content = await fs.readFile(hashFilePath, 'utf8');
-          uploadHash = JSON.parse(content);
-        } catch (e) {
-          if (e.code !== 'ENOENT') {
-            reqLogger(req, 'Error reading uploadhash.json', e);
-            await cleanupArtifacts(fileId, tmpDir, undefined);
-            return res.status(500).json({ message: '서버 내부 에러가 발생했습니다.' });
-          }
-        }
-        if (!uploadHash[query]) uploadHash[query] = {};
-        const nextIndex = Object.keys(uploadHash[query]).length + 1;
-        const finalName = `${nextIndex}.jpg`;
+  const nextIndex = getNextUploadIndex(query);
+  const finalName = `${nextIndex}.jpg`;
         finalPath = path.join(uploadDir, finalName);
         for (let i = 0; i < total; i++) {
           const p = path.join(tmpDir, `${fileId}.${i}.part`);
@@ -219,8 +200,7 @@ module.exports = function(register) {
           const p = path.join(tmpDir, `${fileId}.${i}.part`);
           try { await fs.unlink(p); } catch {}
         }
-        uploadHash[query][finalName] = hash;
-        await fs.writeFile(hashFilePath, JSON.stringify(uploadHash, null, 2));
+  addUploadHash(query, finalName, hash);
         res.status(200).json({ done: true, id: finalName, originalName: originalName || null });
       } catch (e) {
         reqLogger(req, 'Error processing chunked upload', e);
@@ -241,17 +221,8 @@ module.exports = function(register) {
       if (!query) return res.status(400).json({ message: '잘못된 접근입니다.' });
       const { hashes } = req.body || {};
       if (!Array.isArray(hashes)) return res.status(400).json({ message: '서버 내부 에러가 발생했습니다.' });
-      const hashFilePath = getDataPath('uploadhash.json');
-      let uploadHash = {};
-      try {
-        const content = await fs.readFile(hashFilePath, 'utf8');
-        uploadHash = JSON.parse(content);
-      } catch (err) {
-        if (err.code !== 'ENOENT') throw err;
-      }
-      const existing = new Set(Object.values(uploadHash[query] || {}));
-      const duplicates = hashes.filter(h => existing.has(h));
-      res.status(200).json({ duplicates });
+  const duplicates = checkDuplicateHashes(query, hashes);
+  res.status(200).json({ duplicates });
     } catch (err) {
       reqLogger(req, 'Error checking photo hashes', err);
       res.status(500).json({ message: '서버 내부 에러가 발생했습니다.' });
