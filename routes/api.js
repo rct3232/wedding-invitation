@@ -5,7 +5,11 @@ const promClient = require('prom-client');
 const multer = require('multer');
 const fsSync = require('fs');
 const { reqLogger, cleanupArtifacts, getDataPath, createMetricsWrapper } = require('./apiUtils');
-const { getInvitationData, addGuestbookEntry, getGuestbookEntries, getNextUploadIndex, addUploadHash, checkDuplicateHashes } = require('./db');
+const { 
+  getInvitationData, addGuestbookEntry, getGuestbookEntries, 
+  getNextUploadIndex, addUploadHash, checkDuplicateHashes,
+  listInvitations, countGuestbook, deleteUploadByFileName
+} = require('./db');
 
 module.exports = function(register) {
   const router = express.Router();
@@ -40,7 +44,7 @@ module.exports = function(register) {
   router.get('/data/:query', withMetrics('/data', 'GET', async (req, res) => {
     const { query } = req.params;
     try {
-      const invitationData = getInvitationData(query);
+      const invitationData = await getInvitationData(query);
       if (!invitationData) {
         return res.status(404).json({ success: false, error: '해당 초대 데이터를 찾을 수 없습니다.' });
       }
@@ -51,16 +55,16 @@ module.exports = function(register) {
         fs.readdir(folderPath)
       ]);
 
-  const resultData = {};
-  resultData.person = invitationData.person.map(p => ({ name: p.name, color: p.color }));
-  resultData.relation = invitationData.person.map(p => ({
+      const resultData = {};
+      resultData.person = invitationData.person.map(p => ({ name: p.name, color: p.color }));
+      resultData.relation = invitationData.person.map(p => ({
         parent: p.parent.map(parentObj => parentObj.name),
         title: p.order,
         name: p.name.kor.last + p.name.kor.first
       }));
-  resultData.content = invitationData.content;
-  resultData.place = invitationData.place;
-  resultData.account = invitationData.person.map(p => {
+      resultData.content = invitationData.content;
+      resultData.place = invitationData.place;
+      resultData.account = invitationData.person.map(p => {
         const baseInfo = {
           title: p.title,
           name: p.name.kor.last + p.name.kor.first,
@@ -71,7 +75,7 @@ module.exports = function(register) {
         const parentAccounts = p.parent.flatMap(par => {
           if (!par.bank) return [];
           const parentBase = { title: par.title, name: par.name, bank: par.bank.name, account: par.bank.account };
-            return [par.bank.kakao ? { ...parentBase, kakao: par.bank.kakao } : parentBase];
+          return [par.bank.kakao ? { ...parentBase, kakao: par.bank.kakao } : parentBase];
         });
         return { color: p.color, content: [personalAccount, ...parentAccounts] };
       });
@@ -133,7 +137,7 @@ module.exports = function(register) {
       return res.status(400).json({ success: false, error: '메시지와 이름을 입력해야 합니다.' });
     }
     try {
-      addGuestbookEntry(query, name, message);
+      await addGuestbookEntry(query, name, message);
       res.json({ success: true, message: '방명록 작성이 성공적으로 저장되었습니다.' });
     } catch (error) {
       reqLogger(req, 'Error occur during guestbook write', error);
@@ -144,7 +148,7 @@ module.exports = function(register) {
   router.get('/guestbook/read/:query', withMetrics('/guestbook/read', 'GET', async (req, res) => {
     const { query } = req.params;
     try {
-      const entries = getGuestbookEntries(query);
+      const entries = await getGuestbookEntries(query);
       res.json({ success: true, entries });
     } catch (err) {
       reqLogger(req, 'Error occur during guestbook read', err);
@@ -188,8 +192,8 @@ module.exports = function(register) {
             return res.status(400).json({ message: '누락된 청크가 있습니다.' });
           }
         }
-  const nextIndex = getNextUploadIndex(query);
-  const finalName = `${nextIndex}.jpg`;
+        const nextIndex = await getNextUploadIndex(query);
+        const finalName = `${nextIndex}.jpg`;
         finalPath = path.join(uploadDir, finalName);
         for (let i = 0; i < total; i++) {
           const p = path.join(tmpDir, `${fileId}.${i}.part`);
@@ -200,7 +204,7 @@ module.exports = function(register) {
           const p = path.join(tmpDir, `${fileId}.${i}.part`);
           try { await fs.unlink(p); } catch {}
         }
-  addUploadHash(query, finalName, hash);
+        await addUploadHash(query, finalName, hash);
         res.status(200).json({ done: true, id: finalName, originalName: originalName || null });
       } catch (e) {
         reqLogger(req, 'Error processing chunked upload', e);
@@ -221,8 +225,8 @@ module.exports = function(register) {
       if (!query) return res.status(400).json({ message: '잘못된 접근입니다.' });
       const { hashes } = req.body || {};
       if (!Array.isArray(hashes)) return res.status(400).json({ message: '서버 내부 에러가 발생했습니다.' });
-  const duplicates = checkDuplicateHashes(query, hashes);
-  res.status(200).json({ duplicates });
+      const duplicates = await checkDuplicateHashes(query, hashes);
+      res.status(200).json({ duplicates });
     } catch (err) {
       reqLogger(req, 'Error checking photo hashes', err);
       res.status(500).json({ message: '서버 내부 에러가 발생했습니다.' });
