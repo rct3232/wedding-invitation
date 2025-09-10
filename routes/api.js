@@ -4,6 +4,8 @@ const path = require('path');
 const promClient = require('prom-client');
 const multer = require('multer');
 const fsSync = require('fs');
+const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
 const { reqLogger, cleanupArtifacts, getDataPath, createMetricsWrapper } = require('./apiUtils');
 const { 
   getInvitationData, addGuestbookEntry, getGuestbookEntries, 
@@ -230,6 +232,173 @@ module.exports = function(register) {
     } catch (err) {
       reqLogger(req, 'Error checking photo hashes', err);
       res.status(500).json({ message: '서버 내부 에러가 발생했습니다.' });
+    }
+  }));
+
+  // ----- Admin helpers (moved from server.js) -----
+  const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false
+  });
+  const getCsrf = (req) => {
+    if (!req.session.csrf) req.session.csrf = crypto.randomBytes(24).toString('hex');
+    return req.session.csrf;
+  };
+  const safeReadDir = async (dirPath) => {
+    try {
+      const files = await fs.readdir(dirPath);
+      return files.filter(f => /^[\w.\-]+$/.test(f));
+    } catch {
+      return [];
+    }
+  };
+  const safePathJoin = (base, ...segments) => {
+    const p = path.normalize(path.join(base, ...segments));
+    if (!p.startsWith(base)) throw new Error('Invalid path');
+    return p;
+  };
+
+  // ----- Admin JSON APIs (moved) -----
+  router.get('/admin/csrf', withMetrics('/admin/csrf', 'GET', (req, res) => {
+    const token = getCsrf(req);
+    req.session.save(() => {
+      res.set('Cache-Control', 'no-store');
+      res.json({ csrf: token });
+    });
+  }));
+
+  router.post('/admin/login', withMetrics('/admin/login', 'POST', (req, res) => loginLimiter(req, res, () => {
+    const token = req.headers['x-csrf-token'];
+    const { id, pw } = req.body || {};
+    if (token !== req.session.csrf) {
+      reqLogger(req, 'CSRF token mismatch', { received: token, expected: req.session.csrf });
+      return res.status(403).json({ success: false, error: 'Forbidden' });
+    }
+    const ok = id === process.env.ADMIN_ID && pw === process.env.ADMIN_PW;
+    if (!ok) return res.status(401).json({ success: false, error: 'Unauthorized' });
+    req.session.regenerate((err) => {
+      if (err) return res.status(500).json({ success: false });
+      req.session.isAdmin = true;
+      req.session.csrf = crypto.randomBytes(24).toString('hex');
+      res.json({ success: true });
+    });
+  })));
+
+  router.post('/admin/logout', withMetrics('/admin/logout', 'POST', (req, res) => {
+    if (!req.session || !req.session.isAdmin) return res.status(401).json({ success: false });
+    const token = req.headers['x-csrf-token'];
+    if (token !== req.session.csrf) return res.status(403).json({ success: false, error: 'Forbidden' });
+    req.session.destroy(() => res.json({ success: true }));
+  }));
+
+  router.get('/admin/summary', withMetrics('/admin/summary', 'GET', async (req, res) => {
+    if (!req.session || !req.session.isAdmin) return res.status(401).json({ success: false });
+    const ids = await listInvitations();
+    const payload = [];
+    for (const id of ids) {
+      const baseDir = getDataPath(id);
+      const full = await safeReadDir(path.join(baseDir, 'full'));
+      const uploads = await safeReadDir(path.join(baseDir, 'uploads'));
+      const guestCnt = await countGuestbook(id);
+      payload.push({ id, guestCnt, full, uploads });
+    }
+    res.set('Cache-Control', 'no-store');
+    res.json({ success: true, items: payload });
+  }));
+
+  router.get('/admin/uploads/:id/:name', withMetrics('/admin/uploads', 'GET', (req, res) => {
+    if (!req.session || !req.session.isAdmin) return res.status(401).send('Unauthorized');
+    const { id, name } = req.params;
+    if (!/^[\w.\-]+$/.test(id) || !/^[\w.\-]+$/.test(name)) return res.status(400).send('Bad request');
+    try {
+      const base = getDataPath(id);
+      const filePath = safePathJoin(base, 'uploads', name);
+      res.sendFile(filePath, (err) => {
+        if (err) res.status(err.statusCode || 404).send('Not found');
+      });
+    } catch {
+      res.status(400).send('Bad request');
+    }
+  }));
+
+  router.post('/admin/delete-file', withMetrics('/admin/delete-file', 'POST', async (req, res) => {
+    if (!req.session || !req.session.isAdmin) return res.status(401).json({ success: false });
+    try {
+      const token = req.headers['x-csrf-token'];
+      const { id, type, name } = req.body || {};
+      if (token !== req.session.csrf) return res.status(403).json({ success: false, error: 'Forbidden' });
+      if (!/^(full|uploads)$/.test(type)) return res.status(400).json({ success: false });
+      if (!/^[\w.\-]+$/.test(id) || !/^[\w.\-]+$/.test(name)) return res.status(400).json({ success: false });
+      const base = getDataPath(id);
+      const filePath = safePathJoin(base, type, name);
+      await fs.unlink(filePath).catch(() => {});
+      if (type === 'uploads') await deleteUploadByFileName(id, name);
+      return res.json({ success: true });
+    } catch {
+      return res.status(400).json({ success: false });
+    }
+  }));
+
+  // Load raw invitation_data for admin editor
+  router.get('/admin/invitation-data', withMetrics('/admin/invitation-data', 'GET', async (req, res) => {
+    if (!req.session || !req.session.isAdmin) return res.status(401).json({ success: false });
+    const { id } = req.query || {};
+    if (!id || !/^[\w.\-]+$/.test(id)) return res.status(400).json({ success: false, error: 'Bad request' });
+
+    try {
+      // Try DB/helper first
+      let data = await getInvitationData(id);
+      // Fallback to file if helper returned nothing
+      if (!data) {
+        try {
+          const base = getDataPath(id);
+          const filePath = safePathJoin(base, 'invitation.json');
+          const raw = await fs.readFile(filePath, 'utf8');
+          data = JSON.parse(raw);
+        } catch {
+          data = {};
+        }
+      }
+      res.set('Cache-Control', 'no-store');
+      res.json(data || {});
+    } catch (err) {
+      reqLogger(req, 'Error loading admin invitation-data', err);
+      res.status(500).json({ success: false, error: '서버 내부 에러가 발생했습니다.' });
+    }
+  }));
+
+  // Save invitation_data from admin editor
+  router.put('/admin/invitation-data', withMetrics('/admin/invitation-data', 'PUT', async (req, res) => {
+    if (!req.session || !req.session.isAdmin) return res.status(401).json({ success: false });
+    const token = req.headers['x-csrf-token'];
+    if (token !== req.session.csrf) return res.status(403).json({ success: false, error: 'Forbidden' });
+
+    const { id, data } = req.body || {};
+    if (!id || !/^[\w.\-]+$/.test(id)) return res.status(400).json({ success: false, error: 'Bad request' });
+    if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+      return res.status(400).json({ success: false, error: 'Invalid payload' });
+    }
+
+    try {
+      const base = getDataPath(id);
+      const filePath = safePathJoin(base, 'invitation.json');
+      const tmpPath = filePath + '.tmp';
+      // Ensure base directory exists
+      fsSync.mkdirSync(path.dirname(filePath), { recursive: true });
+      await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf8');
+      await fs.rename(tmpPath, filePath);
+      res.json({ success: true });
+    } catch (err) {
+      reqLogger(req, 'Error saving admin invitation-data', err);
+      try {
+        const base = getDataPath(id);
+        const filePath = safePathJoin(base, 'invitation.json');
+        const tmpPath = filePath + '.tmp';
+        if (fsSync.existsSync(tmpPath)) fsSync.unlinkSync(tmpPath);
+      } catch {}
+      res.status(500).json({ success: false, error: '서버 내부 에러가 발생했습니다.' });
     }
   }));
 

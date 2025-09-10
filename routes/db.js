@@ -107,6 +107,23 @@ async function checkDuplicateHashes(invitationId, hashes) {
   return rows.map(r => r.hash);
 }
 
+// Admin: list and delete helpers
+async function listInvitations() {
+  const rows = await all('SELECT id FROM invitation_data ORDER BY id', []);
+  return rows.map(r => r.id);
+}
+async function countGuestbook(invitationId) {
+  const row = await get('SELECT COUNT(*) AS cnt FROM guestbook WHERE invitation_id=?', [invitationId]);
+  return row?.cnt || 0;
+}
+async function listUploads(invitationId) {
+  const rows = await all('SELECT DISTINCT file_name FROM upload_hash WHERE invitation_id=? ORDER BY file_name', [invitationId]);
+  return rows.map(r => r.file_name);
+}
+async function deleteUploadByFileName(invitationId, fileName) {
+  await run('DELETE FROM upload_hash WHERE invitation_id=? AND file_name=?', [invitationId, fileName]);
+}
+
 module.exports = {
   getInvitationData,
   addGuestbookEntry,
@@ -114,4 +131,9 @@ module.exports = {
   getNextUploadIndex,
   addUploadHash,
   checkDuplicateHashes,
+  // Admin exports
+  listInvitations,
+  countGuestbook,
+  listUploads,
+  deleteUploadByFileName,
 };
