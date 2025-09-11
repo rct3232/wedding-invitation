@@ -1,5 +1,5 @@
 .container {
-  background: #fff;
+  background: var(--background);
   padding: 1rem;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0,0,0,.06);
@@ -19,84 +19,89 @@
 }
 
 .section {
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--outline);
   border-radius: 8px;
   padding: 0.75rem;
 }
 
-.grid {
+.grid,
+.gridGapLg,
+.grid2,
+.grid3equal,
+.grid1_2_1,
+.grid2LongShort,
+.grid2ShortLong,
+.repeatGrid {
   display: grid;
   gap: .5rem;
+  align-items: center;
 }
 
 .gridGapLg {
   gap: 1rem;
 }
 
-.rowWrap {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .grid2 {
-  display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: .5rem;
 }
 
 .grid3equal {
-  display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: .5rem;
 }
 
 .grid1_2_1 {
-  display: grid;
   grid-template-columns: 1fr 2fr 1fr;
-  gap: .5rem;
-  align-items: center;
 }
 
-.grid2Auto {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: .5rem;
+.grid2LongShort {
+  grid-template-columns: 1fr 1.75rem;
 }
 
-.inputBox {
+.grid2ShortLong {
+  grid-template-columns: 1.75rem 1fr;
+}
+
+.repeatGrid {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.inputBox,
+.inputTextArea,
+.colorPicker {
   padding: .35rem;
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--outline);
   border-radius: 6px;
+  height: 2rem;
 }
 
-.inputRowNarrow {
-  display: grid;
-  grid-template-columns: 1fr 120px;
-  gap: .5rem;
+.inputTextArea {
+  height: auto;
+  resize: vertical;
+  min-height: 3rem;
+}
+
+.colorPicker {
+  padding: 0;
+  cursor: pointer;
 }
 
 .button,
+.addButton,
 .deleteButton {
-  padding: .25rem .6rem;
+  padding: .125rem;
   background: var(--foreground);
-  color: #fff;
+  color: var(--background);
   border: 0;
   border-radius: 6px;
+  height: 1.5rem;
   cursor: pointer;
 }
 
 .deleteButton {
-  color: #DC2626;
-  border: 1px solid #DC2626;
-  background: none;
-}
-
-.mapGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: .5rem;
+  color: var(--warning);
+  background-color: var(--background);
+  border: 1px solid var(--warning);
+  width: 2.5rem;
 }
 
 .bottomGrid2 {
@@ -133,10 +138,12 @@
   }
   .grid3equal,
   .grid1_2_1,
-  .grid2Auto,
-  .inputRowNarrow,
-  .mapGrid,
+  .repeatGrid,
   .bottomGrid2 {
     grid-template-columns: 1fr !important;
+  }
+  .container,
+  .section {
+    padding: .5rem;
   }
 }
