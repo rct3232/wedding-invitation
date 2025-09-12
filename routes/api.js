@@ -10,7 +10,8 @@ const { reqLogger, cleanupArtifacts, getDataPath, createMetricsWrapper } = requi
 const { 
   getInvitationData, addGuestbookEntry, getGuestbookEntries, 
   getNextUploadIndex, addUploadHash, checkDuplicateHashes,
-  listInvitations, countGuestbook, deleteUploadByFileName
+  listInvitations, countGuestbook, deleteUploadByFileName,
+  upsertInvitationData
 } = require('./db');
 
 module.exports = function(register) {
@@ -348,21 +349,12 @@ module.exports = function(register) {
     if (!id || !/^[\w.\-]+$/.test(id)) return res.status(400).json({ success: false, error: 'Bad request' });
 
     try {
-      // Try DB/helper first
-      let data = await getInvitationData(id);
-      // Fallback to file if helper returned nothing
+      const data = await getInvitationData(id);
       if (!data) {
-        try {
-          const base = getDataPath(id);
-          const filePath = safePathJoin(base, 'invitation.json');
-          const raw = await fs.readFile(filePath, 'utf8');
-          data = JSON.parse(raw);
-        } catch {
-          data = {};
-        }
+        return res.status(404).json({ success: false, error: '데이터를 찾을 수 없습니다.' });
       }
       res.set('Cache-Control', 'no-store');
-      res.json(data || {});
+      res.json(data);
     } catch (err) {
       reqLogger(req, 'Error loading admin invitation-data', err);
       res.status(500).json({ success: false, error: '서버 내부 에러가 발생했습니다.' });
@@ -382,22 +374,10 @@ module.exports = function(register) {
     }
 
     try {
-      const base = getDataPath(id);
-      const filePath = safePathJoin(base, 'invitation.json');
-      const tmpPath = filePath + '.tmp';
-      // Ensure base directory exists
-      fsSync.mkdirSync(path.dirname(filePath), { recursive: true });
-      await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf8');
-      await fs.rename(tmpPath, filePath);
+      await upsertInvitationData(id, data);
       res.json({ success: true });
     } catch (err) {
       reqLogger(req, 'Error saving admin invitation-data', err);
-      try {
-        const base = getDataPath(id);
-        const filePath = safePathJoin(base, 'invitation.json');
-        const tmpPath = filePath + '.tmp';
-        if (fsSync.existsSync(tmpPath)) fsSync.unlinkSync(tmpPath);
-      } catch {}
       res.status(500).json({ success: false, error: '서버 내부 에러가 발생했습니다.' });
     }
   }));

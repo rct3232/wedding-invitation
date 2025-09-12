@@ -124,6 +124,12 @@ async function deleteUploadByFileName(invitationId, fileName) {
   await run('DELETE FROM upload_hash WHERE invitation_id=? AND file_name=?', [invitationId, fileName]);
 }
 
+// Upsert invitation data for admin editor
+async function upsertInvitationData(id, data) {
+  // Use INSERT OR REPLACE for broad SQLite compatibility
+  await run('INSERT OR REPLACE INTO invitation_data(id,json) VALUES(?,?)', [id, JSON.stringify(data)]);
+}
+
 module.exports = {
   getInvitationData,
   addGuestbookEntry,
@@ -136,4 +142,5 @@ module.exports = {
   countGuestbook,
   listUploads,
   deleteUploadByFileName,
+  upsertInvitationData,
 };
