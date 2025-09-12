@@ -11,8 +11,11 @@ const {
   getInvitationData, addGuestbookEntry, getGuestbookEntries, 
   getNextUploadIndex, addUploadHash, checkDuplicateHashes,
   listInvitations, countGuestbook, deleteUploadByFileName,
-  upsertInvitationData
+  upsertInvitationData,
+  listUploads
 } = require('./db');
+const sharp = require('sharp');
+const archiver = require('archiver');
 
 module.exports = function(register) {
   const router = express.Router();
@@ -301,7 +304,8 @@ module.exports = function(register) {
     for (const id of ids) {
       const baseDir = getDataPath(id);
       const full = await safeReadDir(path.join(baseDir, 'full'));
-      const uploads = await safeReadDir(path.join(baseDir, 'uploads'));
+      // Load uploads filenames from DB instead of filesystem
+      const uploads = await listUploads(id);
       const guestCnt = await countGuestbook(id);
       payload.push({ id, guestCnt, full, uploads });
     }
@@ -324,6 +328,52 @@ module.exports = function(register) {
     }
   }));
 
+  // New: ZIP selected upload files and download once
+  router.post('/admin/uploads-zip', withMetrics('/admin/uploads-zip', 'POST', async (req, res) => {
+    if (!req.session || !req.session.isAdmin) return res.status(401).send('Unauthorized');
+    const token = req.headers['x-csrf-token'];
+    if (token !== req.session.csrf) return res.status(403).send('Forbidden');
+
+    const { id, names } = req.body || {};
+    if (!id || !/^[\w.\-]+$/.test(id)) return res.status(400).send('Bad request');
+    if (!Array.isArray(names) || names.length === 0) return res.status(400).send('No files');
+
+    try {
+      const base = getDataPath(id);
+      const fileNames = names.filter(n => /^[\w.\-]+$/.test(n));
+
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="uploads_${id}_${Date.now()}.zip"`
+      );
+
+      const archive = archiver('zip', { zlib: { level: 9 } });
+      archive.on('error', (err) => {
+        reqLogger(req, 'archiver error', err);
+        try { res.status(500).end(); } catch {}
+      });
+      archive.pipe(res);
+
+      for (const name of fileNames) {
+        try {
+          const filePath = safePathJoin(base, 'uploads', name);
+          if (fsSync.existsSync(filePath)) {
+            archive.file(filePath, { name });
+          }
+        } catch {
+          // skip invalid/missing
+        }
+      }
+
+      await archive.finalize();
+    } catch (e) {
+      reqLogger(req, 'Error building uploads zip', e);
+      res.status(500).send('Internal error');
+    }
+  }));
+
   router.post('/admin/delete-file', withMetrics('/admin/delete-file', 'POST', async (req, res) => {
     if (!req.session || !req.session.isAdmin) return res.status(401).json({ success: false });
     try {
@@ -335,7 +385,13 @@ module.exports = function(register) {
       const base = getDataPath(id);
       const filePath = safePathJoin(base, type, name);
       await fs.unlink(filePath).catch(() => {});
-      if (type === 'uploads') await deleteUploadByFileName(id, name);
+      if (type === 'uploads') {
+        await deleteUploadByFileName(id, name);
+      } else if (type === 'full') {
+        // Also remove the corresponding thumbnail: thumb/thumb_{name}
+        const thumbPath = safePathJoin(base, 'thumb', `thumb_${name}`);
+        await fs.unlink(thumbPath).catch(() => {});
+      }
       return res.json({ success: true });
     } catch {
       return res.status(400).json({ success: false });
@@ -380,6 +436,82 @@ module.exports = function(register) {
       reqLogger(req, 'Error saving admin invitation-data', err);
       res.status(500).json({ success: false, error: '서버 내부 에러가 발생했습니다.' });
     }
+  }));
+
+  // Serve thumbnail images for admin gallery
+  router.get('/admin/thumbs/:id/:name', withMetrics('/admin/thumbs', 'GET', (req, res) => {
+    if (!req.session || !req.session.isAdmin) return res.status(401).send('Unauthorized');
+    const { id, name } = req.params;
+    if (!/^[\w.\-]+$/.test(id) || !/^[\w.\-]+$/.test(name)) return res.status(400).send('Bad request');
+    try {
+      const base = getDataPath(id);
+      const filePath = (function() {
+        // thumbs are stored under "<base>/thumb/<name>"
+        const p = path.normalize(path.join(base, 'thumb', name));
+        if (!p.startsWith(base)) throw new Error('Invalid path');
+        return p;
+      })();
+      res.sendFile(filePath, (err) => {
+        if (err) res.status(err.statusCode || 404).send('Not found');
+      });
+    } catch {
+      res.status(400).send('Bad request');
+    }
+  }));
+
+  // Upload directly into "full" for admin gallery
+  router.post('/admin/full-upload/:id', withMetrics('/admin/full-upload', 'POST', (req, res) => {
+    if (!req.session || !req.session.isAdmin) return res.status(401).json({ success: false });
+    const token = req.headers['x-csrf-token'];
+    if (token !== req.session.csrf) return res.status(403).json({ success: false, error: 'Forbidden' });
+
+    const { id } = req.params || {};
+    if (!id || !/^[\w.\-]+$/.test(id)) return res.status(400).json({ success: false, error: 'Bad request' });
+
+    const memUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } }).single('image');
+    memUpload(req, res, async (err) => {
+      if (err) return res.status(400).json({ success: false, error: 'Upload error' });
+      if (!req.file) return res.status(400).json({ success: false, error: 'No file' });
+
+      // Only allow JPEG to keep naming consistent like "<index>.jpg"
+      const isJpeg = (req.file.mimetype || '').toLowerCase() === 'image/jpeg'
+        || /\.jpe?g$/i.test(req.file.originalname || '');
+      if (!isJpeg) return res.status(415).json({ success: false, error: 'Only JPEG is allowed' });
+
+      try {
+        const baseDir = getDataPath(id);
+        const fullDir = path.join(baseDir, 'full');
+        if (!fsSync.existsSync(fullDir)) fsSync.mkdirSync(fullDir, { recursive: true });
+
+        const files = await fs.readdir(fullDir).catch(() => []);
+        let maxIdx = 0;
+        for (const f of files) {
+          const name = path.parse(f).name;
+          const n = parseInt(name, 10);
+          if (!Number.isNaN(n)) maxIdx = Math.max(maxIdx, n);
+        }
+        const nextIndex = maxIdx + 1;
+        const finalName = `${nextIndex}.jpg`;
+        const finalPath = path.join(fullDir, finalName);
+
+        await fs.writeFile(finalPath, req.file.buffer);
+
+        // Create thumbnail: width 500px JPEG saved as "<baseDir>/thumb/thumb_<finalName>"
+        const thumbDir = path.join(baseDir, 'thumb');
+        if (!fsSync.existsSync(thumbDir)) fsSync.mkdirSync(thumbDir, { recursive: true });
+        const thumbPath = path.join(thumbDir, `thumb_${finalName}`);
+        await sharp(req.file.buffer)
+          .rotate()
+          .resize({ width: 500, withoutEnlargement: true })
+          .jpeg({ quality: 80 })
+          .toFile(thumbPath);
+
+        return res.json({ success: true, name: finalName });
+      } catch (e) {
+        reqLogger(req, 'Error in /admin/full-upload', e);
+        return res.status(500).json({ success: false, error: 'Internal error' });
+      }
+    });
   }));
 
   return router;

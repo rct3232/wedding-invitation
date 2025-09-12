@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminHeader from './components/AdminHeader';
 import InvitationList from './components/InvitationList';
-import InvitationEditor from './components/InvitationEditor';
+import InvitationManage from './components/InvitationManage';
 
 /* ========= Page ========= */
 export default function AdminPage() {
@@ -63,7 +63,7 @@ export default function AdminPage() {
         ) : !selectedItem ? (
           <InvitationList items={items} onSelect={(id) => setSelectedId(id)} />
         ) : (
-          <InvitationEditor
+          <InvitationManage
             id={selectedItem.id}
             summary={selectedItem}
             csrf={csrf}

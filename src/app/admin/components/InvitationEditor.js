@@ -135,10 +135,7 @@ export default function InvitationEditor({ id, summary, csrf, onBack, onRefreshS
                   </div>
                   <div className={styles.grid2}>
                     <input className={styles.inputBox} value={p.title || ''} onChange={onChange(`person.${i}.title`)} placeholder='제목(신랑/신부)'/>
-                    <div className={styles.grid2LongShort}>
-                      <input className={styles.inputBox} value={p.order || ''} onChange={onChange(`person.${i}.order`)} placeholder='호칭(아들/딸)'/>
-                      <input className={styles.colorPicker} type='color' value={p.color || '#D9D4CF'} onChange={onChange(`person.${i}.color`)} title='색상' />
-                    </div>
+                    <input className={styles.inputBox} value={p.order || ''} onChange={onChange(`person.${i}.order`)} placeholder='호칭(아들/딸)'/>
                   </div>
 
                   <div className={styles.grid2}>
@@ -151,7 +148,10 @@ export default function InvitationEditor({ id, summary, csrf, onBack, onRefreshS
                   <div className={styles.grid3equal}>
                     <input className={styles.inputBox} value={p?.bank?.name || ''} onChange={onChange(`person.${i}.bank.name`)} placeholder='은행명'/>
                     <input className={styles.inputBox} value={p?.bank?.account || ''} onChange={onChange(`person.${i}.bank.account`)} placeholder='계좌번호'/>
-                    <input className={styles.inputBox} value={p?.bank?.kakao || ''} onChange={onChange(`person.${i}.bank.kakao`)} placeholder='카카오페이 링크(선택)'/>
+                    <div className={styles.grid2LongShort}>
+                      <input className={styles.inputBox} value={p?.bank?.kakao || ''} onChange={onChange(`person.${i}.bank.kakao`)} placeholder='카카오페이 링크(선택)'/>
+                      <input className={styles.colorPicker} type='color' value={p.color || '#D9D4CF'} onChange={onChange(`person.${i}.color`)} title='색상' />
+                    </div>
                   </div>
 
                   <div className={styles.section}>
@@ -219,9 +219,18 @@ export default function InvitationEditor({ id, summary, csrf, onBack, onRefreshS
                   <p>내용</p>
                     <input className={styles.inputBox} value={invDraft?.content?.date || ''} onChange={onChange('content.date')} placeholder='날짜 (예: 2025-09-28T12:00:00+0900)'/>
                     <textarea className={styles.inputTextArea} value={invDraft?.content?.greeting || ''} onChange={onChange('content.greeting')} placeholder='인사말' rows={3}/>
-                    <div className={styles.grid2LongShort}>
+                    <div className={styles.grid2auto}>
                       <input className={styles.inputBox} value={invDraft?.content?.splashText || ''} onChange={onChange('content.splashText')} placeholder='splashText'/>
-                      <input className={styles.inputBox} type='number' min={0} max={1} value={invDraft?.content?.colorInvert ?? 0} onChange={onNumChange('content.colorInvert')} placeholder='colorInvert (0/1)'/>
+                      <div className={styles.grid2}>
+                        <div className={styles.grid2auto}>
+                          <input type='radio' value={0} checked={invDraft?.content?.colorInvert === 0} onChange={onNumChange('content.colorInvert')}/>
+                          <label>흰색</label>
+                        </div>
+                        <div className={styles.grid2auto}>
+                          <input type='radio' value={1} checked={invDraft?.content?.colorInvert === 1} onChange={onNumChange('content.colorInvert')}/>
+                          <label>검정색</label>  
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -233,7 +242,7 @@ export default function InvitationEditor({ id, summary, csrf, onBack, onRefreshS
                   </div>
                   <div className={styles.repeatGrid}>
                     {(invDraft?.content?.confetti?.color || []).map((c, idx) => (
-                      <div className={styles.rowWrap} key={idx}>
+                      <div className={styles.grid2auto} key={idx}>
                         <div className={styles.grid2ShortLong}>
                           <input className={styles.colorPicker} type='color' value={c} onChange={onChange(`content.confetti.color.${idx}`)} />
                           <input className={styles.inputBox} value={c} onChange={onChange(`content.confetti.color.${idx}`)}/>
@@ -261,7 +270,7 @@ export default function InvitationEditor({ id, summary, csrf, onBack, onRefreshS
                   <div className={`${styles.section} ${styles.grid}`}>
                     {(invDraft?.place?.route || []).map((r, i) => (
                       <div className={styles.grid} key={i}>
-                        <div className={styles.rowWrap}>
+                        <div className={styles.grid2auto}>
                           <input className={styles.inputBox} value={r.type || ''} onChange={onChange(`place.route.${i}.type`)} placeholder='구분 (대중교통/주차 등)'/>
                           <button className={styles.deleteButton} onClick={() => setInvDraft((prev) => removeAtIndex(prev, 'place.route', i))}>
                             삭제
@@ -271,7 +280,7 @@ export default function InvitationEditor({ id, summary, csrf, onBack, onRefreshS
                           {(r.content || []).map((c, j) => (
                             <div key={j} className={styles.grid}>
                               <div className={styles.rowWrap}>
-                                <p>내용 {j}</p>
+                                <p>내용 {j+1}</p>
                                 <button className={styles.deleteButton} onClick={() => setInvDraft((prev) => removeAtIndex(prev, `place.route.${i}.content`, j))}>
                                   삭제
                                 </button>
@@ -297,7 +306,7 @@ export default function InvitationEditor({ id, summary, csrf, onBack, onRefreshS
                   </div>
 
                   <div className={`${styles.section} ${styles.grid}`}>
-                    <p>지도</p>
+                    <p>location point</p>
                     <div className={styles.grid2}>
                       <div className={styles.grid2ShortLong}>
                         <p style={{textAlign: 'Center'}}>lat</p>
@@ -307,6 +316,9 @@ export default function InvitationEditor({ id, summary, csrf, onBack, onRefreshS
                         <p style={{textAlign: 'Center'}}>lng</p>
                         <input className={styles.inputBox} type='number' step='any' value={invDraft?.place?.map?.pos?.lng ?? 0} onChange={onNumChange('place.map.pos.lng')} placeholder='pos.lng'/>
                       </div>
+                    </div>
+                    <p>center point</p>
+                    <div className={styles.grid2}>
                       <div className={styles.grid2ShortLong}>
                         <p style={{textAlign: 'Center'}}>lat</p>
                         <input className={styles.inputBox} type='number' step='any' value={invDraft?.place?.map?.center?.lat ?? 0} onChange={onNumChange('place.map.center.lat')} placeholder='center.lat'/>

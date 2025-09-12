@@ -24,9 +24,17 @@
   padding: 0.75rem;
 }
 
+.rowWrap {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .grid,
 .gridGapLg,
 .grid2,
+.grid2auto,
 .grid3equal,
 .grid1_2_1,
 .grid2LongShort,
@@ -45,12 +53,8 @@
   grid-template-columns: 1fr 1fr;
 }
 
-.grid3equal {
-  grid-template-columns: 1fr 1fr 1fr;
-}
-
-.grid1_2_1 {
-  grid-template-columns: 1fr 2fr 1fr;
+.grid2auto {
+  grid-template-columns: 1fr auto;
 }
 
 .grid2LongShort {
@@ -59,6 +63,14 @@
 
 .grid2ShortLong {
   grid-template-columns: 1.75rem 1fr;
+}
+
+.grid3equal {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.grid1_2_1 {
+  grid-template-columns: 1fr 2fr 1fr;
 }
 
 .repeatGrid {
