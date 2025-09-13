@@ -17,6 +17,8 @@ import Guestbook from "./modules/guestbook";
 import BgmPlayer from "./modules/bgmPlayer";
 import useWeddingData from "./modules/useWeddingData";
 
+import AnnoyingPopup from "./joke/AnnoyingPopup"; // Import the AnnoyingPopup component
+
 export const dynamic = "force-dynamic";
 
 export default function Home() {
@@ -25,6 +27,8 @@ export default function Home() {
   const [isGradientActive, setIsGradientActive] = useState(false);
   const [hideBankSection, setHideBankSection] = useState(false);
   const [windowSize, setWindowSize] = useState({ width: undefined, height: undefined });
+  
+  const [showAnnoyingPopup, setShowAnnoyingPopup] = useState(false); // State to control AnnoyingPopup visibility
 
   const containerRef = useRef(null);
 
@@ -48,6 +52,7 @@ export default function Home() {
         const b64 = uriDecoded.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(uriDecoded.length / 4) * 4, "=");
         console.log(atob(b64));
         if (atob(b64) == "noAccount") setHideBankSection(true);
+        if (atob(b64) == "joke") setShowAnnoyingPopup(true); // Show AnnoyingPopup if modeParam is "joke"
       } catch (e) {
         console.error("base64 decode failed:", e);
       }
@@ -138,6 +143,7 @@ export default function Home() {
 
         {data.bgmUrl && <BgmPlayer bgmUrl={data.bgmUrl} />}
       </div>
+      {showAnnoyingPopup && <AnnoyingPopup />}
     </div>
   );
 }
