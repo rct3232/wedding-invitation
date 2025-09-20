@@ -20,7 +20,7 @@ export default function FileInput({ handleFileChange, isSelecting, uploadStarted
           id="fileInput"
           type="file"
           multiple
-          accept="image/*,image/heic"
+          accept="image/*,image/heic,video/*"
           onChange={handleFileChange}
           className={styles.hiddenInput}
           disabled={disabled}

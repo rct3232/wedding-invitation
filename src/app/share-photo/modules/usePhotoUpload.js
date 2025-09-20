@@ -37,11 +37,89 @@ export default function usePhotoUpload() {
     return 3;
   };
 
+
+  // Helper: get hash for image or video
   const calculateFileHash = async (file) => {
-    const arrayBuffer = await file.arrayBuffer();
-    const normalizedBuffer = await normalizeFile(arrayBuffer);
-    const wordArray = CryptoJS.lib.WordArray.create(normalizedBuffer);
-    return CryptoJS.SHA256(wordArray).toString(CryptoJS.enc.Hex);
+    if (file.type.startsWith('video/')) {
+      // For video, prefer hashing the first frame; fallback to sampling the first bytes
+      try {
+        const firstFrameBuffer = await withTimeout(extractFirstFrameAsJPEG(file), 2000);
+        const wordArray = CryptoJS.lib.WordArray.create(firstFrameBuffer);
+        return CryptoJS.SHA256(wordArray).toString(CryptoJS.enc.Hex);
+      } catch {
+        const sample = await sampleBufferForHash(file, 512 * 1024);
+        const wordArray = CryptoJS.lib.WordArray.create(sample);
+        return CryptoJS.SHA256(wordArray).toString(CryptoJS.enc.Hex);
+      }
+    } else {
+      const arrayBuffer = await file.arrayBuffer();
+      const normalizedBuffer = await normalizeFile(arrayBuffer);
+      const wordArray = CryptoJS.lib.WordArray.create(normalizedBuffer);
+      return CryptoJS.SHA256(wordArray).toString(CryptoJS.enc.Hex);
+    }
+  };
+
+  // Fallback hashing by sampling first N bytes (for videos when frame extraction fails)
+  const sampleBufferForHash = async (file, size) => {
+    const blob = file.slice(0, Math.min(size, file.size));
+    return await blob.arrayBuffer();
+  };
+
+  // Utility to timeout a promise
+  const withTimeout = (promise, ms) => {
+    return new Promise((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error('timeout')), ms);
+      promise.then((v) => { clearTimeout(t); resolve(v); })
+             .catch((e) => { clearTimeout(t); reject(e); });
+    });
+  };
+
+  // Extract first frame from video as JPEG ArrayBuffer
+  const extractFirstFrameAsJPEG = async (file) => {
+    return new Promise((resolve, reject) => {
+      try {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.muted = true;
+        video.playsInline = true;
+        const url = URL.createObjectURL(file);
+        const cleanup = () => {
+          URL.revokeObjectURL(url);
+        };
+        video.src = url;
+        const onSeeked = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob((blob) => {
+              if (!blob) { reject(new Error('toBlob failed')); cleanup(); return; }
+              const reader = new FileReader();
+              reader.onload = () => { resolve(reader.result); cleanup(); };
+              reader.onerror = (e) => { reject(e); cleanup(); };
+              reader.readAsArrayBuffer(blob);
+            }, 'image/jpeg', 0.6);
+          } catch (e) {
+            cleanup();
+            reject(e);
+          }
+        };
+        video.addEventListener('loadedmetadata', () => {
+          try {
+            // seek a tiny bit to ensure a decodable frame
+            video.currentTime = 0.01;
+          } catch (e) {
+            reject(e);
+          }
+        }, { once: true });
+        video.addEventListener('seeked', onSeeked, { once: true });
+        video.onerror = (e) => { cleanup(); reject(e); };
+      } catch (e) {
+        reject(e);
+      }
+    });
   };
 
   const normalizeFile = async (arrayBuffer) => {
@@ -69,24 +147,65 @@ export default function usePhotoUpload() {
   };
 
   const generateThumbnail = async (file) => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d");
-          const MAX_SIZE = 200;
-          const scale = Math.min(MAX_SIZE / img.width, MAX_SIZE / img.height);
-          canvas.width = img.width * scale;
-          canvas.height = img.height * scale;
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.7);
+    if (file.type.startsWith('video/')) {
+      // For video, use first frame as thumbnail
+      return new Promise((resolve, reject) => {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.muted = true;
+        video.playsInline = true;
+        const url = URL.createObjectURL(file);
+        const cleanup = () => URL.revokeObjectURL(url);
+        video.src = url;
+        video.addEventListener('loadedmetadata', () => {
+          try { video.currentTime = 0.01; } catch {}
+        }, { once: true });
+        video.addEventListener('seeked', () => {
+          const canvas = document.createElement('canvas');
+          const MAX_SIZE = 120;
+          const scale = Math.min(MAX_SIZE / video.videoWidth, MAX_SIZE / video.videoHeight);
+          canvas.width = Math.max(1, Math.floor(video.videoWidth * scale));
+          canvas.height = Math.max(1, Math.floor(video.videoHeight * scale));
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob((blob) => {
+            cleanup();
+            if (blob) return resolve(blob);
+            // Fallback if toBlob fails
+            try {
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+              const byteString = atob(dataUrl.split(',')[1]);
+              const ab = new ArrayBuffer(byteString.length);
+              const ia = new Uint8Array(ab);
+              for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+              resolve(new Blob([ab], { type: 'image/jpeg' }));
+            } catch (e) {
+              reject(e);
+            }
+          }, 'image/jpeg', 0.6);
+        }, { once: true });
+        video.onerror = (e) => { cleanup(); reject(e); };
+      });
+    } else {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            const MAX_SIZE = 120;
+            const scale = Math.min(MAX_SIZE / img.width, MAX_SIZE / img.height);
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.6);
+          };
+          img.src = event.target.result;
         };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
+        reader.readAsDataURL(file);
+      });
+    }
   };
 
   const checkServerDuplicates = async (pathParam, hashes) => {
@@ -120,12 +239,28 @@ export default function usePhotoUpload() {
         const files = Array.from(event.target.files || []);
         if (files.length === 0) return;
 
-        const hashedList = await Promise.all(
-          files.map(async (file) => ({ file, hash: await calculateFileHash(file) }))
-        );
+        // Concurrency-limited hashing to keep UI responsive
+        const concurrency = Math.max(1, getRecommendedConcurrency());
+        const hashedList = new Array(files.length);
+        let cursor = 0;
+        const worker = async () => {
+          while (cursor < files.length) {
+            const i = cursor++;
+            const file = files[i];
+            try {
+              const hash = await calculateFileHash(file);
+              hashedList[i] = { file, hash };
+            } catch {
+              // On hashing failure, skip this file gracefully
+              hashedList[i] = null;
+            }
+          }
+        };
+        await Promise.all(Array.from({ length: concurrency }, () => worker()));
+        const filteredHashedList = hashedList.filter(Boolean);
 
         const accumulated = new Set(clientHashes);
-        const pending = hashedList.filter(({ hash }) => !accumulated.has(hash));
+        const pending = filteredHashedList.filter(({ hash }) => !accumulated.has(hash));
 
         if (pending.length === 0) {
           return;

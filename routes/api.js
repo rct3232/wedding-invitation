@@ -198,8 +198,16 @@ module.exports = function(register) {
             return res.status(400).json({ message: '누락된 청크가 있습니다.' });
           }
         }
-        const nextIndex = await getNextUploadIndex(query);
-        const finalName = `${nextIndex}.jpg`;
+  const nextIndex = await getNextUploadIndex(query);
+  // preserve original extension safely
+  const rawExt = (originalName && path.extname(originalName).toLowerCase()) || '';
+  const allowed = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif', '.hevc', '.mp4', '.mov', '.mkv', '.avi']);
+  let safeExt = '';
+  if (rawExt === '.jpeg') safeExt = '.jpg';
+  else if (allowed.has(rawExt)) safeExt = rawExt;
+  // fallback if no/invalid ext
+  if (!safeExt) safeExt = '.bin';
+  const finalName = `${nextIndex}${safeExt}`;
         finalPath = path.join(uploadDir, finalName);
         for (let i = 0; i < total; i++) {
           const p = path.join(tmpDir, `${fileId}.${i}.part`);
