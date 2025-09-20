@@ -14,6 +14,9 @@ const GalleryItem = memo(function GalleryItem({
   progress = null,
   uploadStarted = false,
 }) {
+  // Detect if the original file was a video by its filename extension
+  const isVideo = /\.(mp4|mov|mkv|avi|webm|m4v|3gp|3g2|hevc)$/i.test(file?.name || '');
+
   const showProgress =
     uploadStarted &&
     !isDuplicate &&
@@ -31,12 +34,30 @@ const GalleryItem = memo(function GalleryItem({
       onMouseEnter={() => setHoveredIndex(index)}
       onMouseLeave={() => setHoveredIndex(null)}
       onClick={(e) => e.stopPropagation()}
+      style={{ position: 'relative' }}
     >
       <img
         src={URL.createObjectURL(file)}
         alt={`Thumbnail ${index + 1}`}
         className={isDuplicate ? styles.darkened : ""}
       />
+      {isVideo && (
+        <img
+          src="/circle-video.png"
+          alt="video"
+          style={{
+            position: 'absolute',
+            top: 6,
+            left: 6,
+            width: 24,
+            height: 24,
+            zIndex: 3,
+            pointerEvents: 'none',
+            opacity: 0.9,
+            filter: 'drop-shadow(0 0 2px var(--background)) drop-shadow(0 0 4px var(--background))',
+          }}
+        />
+      )}
       {showProgress && (
         <div className={overlayClass} style={{ ['--progress']: `${progress}%` }}>
           <div className={styles.progressTrack}>
