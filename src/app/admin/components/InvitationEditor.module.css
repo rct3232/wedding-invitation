@@ -116,13 +116,6 @@
   width: 2.5rem;
 }
 
-.bottomGrid2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-top: .75rem;
-}
-
 .listScrollable {
   margin: .25rem 0;
   padding-left: 1.1rem;

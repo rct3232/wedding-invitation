@@ -339,43 +339,6 @@ export default function InvitationEditor({ id, summary, csrf, onBack, onRefreshS
           </div>
         )}
       </div>
-
-      <div className={styles.bottomGrid2}>
-        <div>
-          <h3 style={{ margin: '.25rem 0 .5rem' }}>갤러리(full)</h3>
-          <ul className={styles.listScrollable}>
-            {(summary?.full || []).length === 0 ? (
-              <li>없음</li>
-            ) : (
-              summary.full.map(n => (
-                <li key={n}>
-                  <a href={`/api/image/${summary.id}/${encodeURIComponent(n)}`} target="_blank" rel="noopener noreferrer">{n}</a>
-                  <button onClick={() => del('full', n)} style={{ marginLeft: '.5rem', padding: '.25rem .6rem', background: '#DC2626', color: '#fff', border: 0, borderRadius: 6, cursor: 'pointer' }}>
-                    삭제
-                  </button>
-                </li>
-              ))
-            )}
-          </ul>
-        </div>
-        <div>
-          <h3 style={{ margin: '.25rem 0 .5rem' }}>업로드(uploads)</h3>
-          <ul className={styles.listScrollable}>
-            {(summary?.uploads || []).length === 0 ? (
-              <li>없음</li>
-            ) : (
-              summary.uploads.map(n => (
-                <li key={n}>
-                  <a href={`/api/admin/uploads/${summary.id}/${encodeURIComponent(n)}`} target="_blank" rel="noopener noreferrer">{n}</a>
-                  <button onClick={() => del('uploads', n)} style={{ marginLeft: '.5rem', padding: '.25rem .6rem', background: '#DC2626', color: '#fff', border: 0, borderRadius: 6, cursor: 'pointer' }}>
-                    삭제
-                  </button>
-                </li>
-              ))
-            )}
-          </ul>
-        </div>
-      </div>
     </section>
   );
 }
