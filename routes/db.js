@@ -1,17 +1,35 @@
 const path = require('path');
 const fs = require('fs');
 const fsPromises = require('fs').promises;
-const Database = require('better-sqlite3');
+const sqlite3 = require('sqlite3').verbose();
 
 // DB file under data directory
 const dataDir = path.join(__dirname, '..', 'data/db');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 const dbPath = path.join(dataDir, 'app.db');
-const db = new Database(dbPath);
+const db = new sqlite3.Database(dbPath);
 
-db.pragma('journal_mode = WAL');
+// Small promise helpers over sqlite3
+function exec(sql) {
+  return new Promise((resolve, reject) => db.exec(sql, (err) => err ? reject(err) : resolve()));
+}
+function run(sql, params = []) {
+  return new Promise((resolve, reject) => db.run(sql, params, function(err) {
+    if (err) return reject(err);
+    resolve(this);
+  }));
+}
+function get(sql, params = []) {
+  return new Promise((resolve, reject) => db.get(sql, params, (err, row) => err ? reject(err) : resolve(row)));
+}
+function all(sql, params = []) {
+  return new Promise((resolve, reject) => db.all(sql, params, (err, rows) => err ? reject(err) : resolve(rows)));
+}
 
-db.exec(`
+// Initialize schema
+(async () => {
+  await exec(`PRAGMA journal_mode = WAL;`);
+  await exec(`
 CREATE TABLE IF NOT EXISTS invitation_data (
   id TEXT PRIMARY KEY,
   json TEXT NOT NULL
@@ -30,63 +48,86 @@ CREATE TABLE IF NOT EXISTS upload_hash (
   PRIMARY KEY(invitation_id, hash)
 );
 `);
-
-const stmtSelectInvitation = db.prepare('SELECT json FROM invitation_data WHERE id=?');
-const stmtInsertInvitation = db.prepare('INSERT INTO invitation_data(id,json) VALUES(?,?)');
-const stmtExistsInvitation = db.prepare('SELECT 1 FROM invitation_data WHERE id=?');
-const stmtInsertGuestbook = db.prepare('INSERT INTO guestbook(invitation_id,name,message,created_at) VALUES(?,?,?,?)');
-const stmtSelectGuestbook = db.prepare('SELECT name,message,created_at FROM guestbook WHERE invitation_id=? ORDER BY created_at ASC');
-const stmtCountUpload = db.prepare('SELECT COUNT(*) as cnt FROM upload_hash WHERE invitation_id=?');
-const stmtInsertUploadHash = db.prepare('INSERT OR IGNORE INTO upload_hash(invitation_id,file_name,hash) VALUES(?,?,?)');
+  await mergeDataJsonOnStartup();
+})().catch(() => { /* ignore init errors to not crash server */ });
 
 async function mergeDataJsonOnStartup() {
   const jsonFile = path.join(__dirname, '..', 'data/data.json');
   try {
     const content = await fsPromises.readFile(jsonFile, 'utf8');
     const parsed = JSON.parse(content);
-    const insertMissing = db.transaction((entries) => {
-      for (const [id, value] of Object.entries(entries)) {
-        const exists = stmtExistsInvitation.get(id);
+    await exec('BEGIN');
+    try {
+      for (const [id, value] of Object.entries(parsed)) {
+        const exists = await get('SELECT 1 FROM invitation_data WHERE id=?', [id]);
         if (!exists) {
-          stmtInsertInvitation.run(id, JSON.stringify(value));
+          await run('INSERT INTO invitation_data(id,json) VALUES(?,?)', [id, JSON.stringify(value)]);
         }
       }
-    });
-    insertMissing(parsed);
+      await exec('COMMIT');
+    } catch (e) {
+      await exec('ROLLBACK');
+      throw e;
+    }
   } catch (e) {
     if (e.code !== 'ENOENT') throw e;
   }
 }
-mergeDataJsonOnStartup();
 
-function getInvitationData(id) {
-  const row = stmtSelectInvitation.get(id);
+// ----- Async DB helpers -----
+async function getInvitationData(id) {
+  const row = await get('SELECT json FROM invitation_data WHERE id=?', [id]);
   if (!row) return null;
   try { return JSON.parse(row.json); } catch { return null; }
 }
 
-function addGuestbookEntry(invitationId, name, message) {
-  stmtInsertGuestbook.run(invitationId, name, message, Date.now());
+async function addGuestbookEntry(invitationId, name, message) {
+  await run('INSERT INTO guestbook(invitation_id,name,message,created_at) VALUES(?,?,?,?)', [invitationId, name, message, Date.now()]);
 }
 
-function getGuestbookEntries(invitationId) {
-  return stmtSelectGuestbook.all(invitationId).map(r => ({ name: r.name, message: r.message }));
+async function getGuestbookEntries(invitationId) {
+  const rows = await all('SELECT name,message,created_at FROM guestbook WHERE invitation_id=? ORDER BY created_at ASC', [invitationId]);
+  return rows.map(r => ({ name: r.name, message: r.message }));
 }
 
-function getNextUploadIndex(invitationId) {
-  return stmtCountUpload.get(invitationId).cnt + 1;
+async function getNextUploadIndex(invitationId) {
+  const row = await get('SELECT COUNT(*) as cnt FROM upload_hash WHERE invitation_id=?', [invitationId]);
+  return (row?.cnt || 0) + 1;
 }
 
-function addUploadHash(invitationId, fileName, hash) {
-  stmtInsertUploadHash.run(invitationId, fileName, hash);
+async function addUploadHash(invitationId, fileName, hash) {
+  await run('INSERT OR IGNORE INTO upload_hash(invitation_id,file_name,hash) VALUES(?,?,?)', [invitationId, fileName, hash]);
 }
 
-function checkDuplicateHashes(invitationId, hashes) {
+async function checkDuplicateHashes(invitationId, hashes) {
   if (!hashes.length) return [];
   const placeholders = hashes.map(() => '?').join(',');
   const sql = `SELECT hash FROM upload_hash WHERE invitation_id=? AND hash IN (${placeholders})`;
-  const rows = db.prepare(sql).all(invitationId, ...hashes);
+  const rows = await all(sql, [invitationId, ...hashes]);
   return rows.map(r => r.hash);
+}
+
+// Admin: list and delete helpers
+async function listInvitations() {
+  const rows = await all('SELECT id FROM invitation_data ORDER BY id', []);
+  return rows.map(r => r.id);
+}
+async function countGuestbook(invitationId) {
+  const row = await get('SELECT COUNT(*) AS cnt FROM guestbook WHERE invitation_id=?', [invitationId]);
+  return row?.cnt || 0;
+}
+async function listUploads(invitationId) {
+  const rows = await all('SELECT DISTINCT file_name FROM upload_hash WHERE invitation_id=? ORDER BY file_name', [invitationId]);
+  return rows.map(r => r.file_name);
+}
+async function deleteUploadByFileName(invitationId, fileName) {
+  await run('DELETE FROM upload_hash WHERE invitation_id=? AND file_name=?', [invitationId, fileName]);
+}
+
+// Upsert invitation data for admin editor
+async function upsertInvitationData(id, data) {
+  // Use INSERT OR REPLACE for broad SQLite compatibility
+  await run('INSERT OR REPLACE INTO invitation_data(id,json) VALUES(?,?)', [id, JSON.stringify(data)]);
 }
 
 module.exports = {
@@ -96,4 +137,10 @@ module.exports = {
   getNextUploadIndex,
   addUploadHash,
   checkDuplicateHashes,
+  // Admin exports
+  listInvitations,
+  countGuestbook,
+  listUploads,
+  deleteUploadByFileName,
+  upsertInvitationData,
 };
