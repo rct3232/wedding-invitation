@@ -16,6 +16,7 @@ export default function UploadsManager({ id, summary, csrf, onBack, onRefreshSum
   }, [summary]);
 
   const fileUrl = (name) => `/api/admin/uploads/${encodeURIComponent(id)}/${encodeURIComponent(name)}`;
+  const isVideo = (name) => /\.(mp4|mov|mkv|avi|webm|m4v)$/i.test(name || '');
 
   const toggleSelect = (name) => {
     setSelected((prev) => {
@@ -176,14 +177,26 @@ export default function UploadsManager({ id, summary, csrf, onBack, onRefreshSum
             return (
               <div key={name} style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', background: '#f7f7f7', minHeight: 160 }}>
                 {!isMissing ? (
-                  <img
-                    src={fileUrl(name)}
-                    alt={name}
-                    loading="lazy"
-                    onClick={() => setPreview(name)}
-                    style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block', cursor: 'pointer' }}
-                    onError={() => markMissing(name)}
-                  />
+                  isVideo(name) ? (
+                    <video
+                      src={fileUrl(name)}
+                      preload="metadata"
+                      muted
+                      playsInline
+                      onClick={() => setPreview(name)}
+                      style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block', cursor: 'pointer', background: '#000' }}
+                      onError={() => markMissing(name)}
+                    />
+                  ) : (
+                    <img
+                      src={fileUrl(name)}
+                      alt={name}
+                      loading="lazy"
+                      onClick={() => setPreview(name)}
+                      style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block', cursor: 'pointer' }}
+                      onError={() => markMissing(name)}
+                    />
+                  )
                 ) : (
                   <div
                     onClick={() => {}}
@@ -203,6 +216,15 @@ export default function UploadsManager({ id, summary, csrf, onBack, onRefreshSum
                     style={{ width: 18, height: 18 }}
                     title="선택"
                   />
+                  {isVideo(name) && (
+                    <img
+                      src="/circle-video.png"
+                      alt="video"
+                      width={18}
+                      height={18}
+                      style={{ filter: 'drop-shadow(0 0 2px var(--background))' }}
+                    />
+                  )}
                 </div>
 
                 <div style={{ position: 'absolute', top: 6, right: 6, display: 'flex', gap: 6 }}>
@@ -237,12 +259,22 @@ export default function UploadsManager({ id, summary, csrf, onBack, onRefreshSum
           }}
         >
           <div style={{ maxWidth: '90vw', maxHeight: '90vh' }}>
-            <img
-              src={fileUrl(preview)}
-              alt={preview}
-              style={{ maxWidth: '90vw', maxHeight: '90vh', display: 'block', borderRadius: 8, background: '#000' }}
-              onError={() => setPreview(null)}
-            />
+            {isVideo(preview) ? (
+              <video
+                src={fileUrl(preview)}
+                controls
+                autoPlay
+                style={{ maxWidth: '90vw', maxHeight: '90vh', display: 'block', borderRadius: 8, background: '#000' }}
+                onError={() => setPreview(null)}
+              />
+            ) : (
+              <img
+                src={fileUrl(preview)}
+                alt={preview}
+                style={{ maxWidth: '90vw', maxHeight: '90vh', display: 'block', borderRadius: 8, background: '#000' }}
+                onError={() => setPreview(null)}
+              />
+            )}
           </div>
         </div>
       )}
