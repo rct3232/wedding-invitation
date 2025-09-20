@@ -1,0 +1,154 @@
+.container {
+  background: var(--background);
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.06);
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.section {
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.rowWrap {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.grid,
+.gridGapLg,
+.grid2,
+.grid2auto,
+.grid3equal,
+.grid1_2_1,
+.grid2LongShort,
+.grid2ShortLong,
+.repeatGrid {
+  display: grid;
+  gap: .5rem;
+  align-items: center;
+}
+
+.gridGapLg {
+  gap: 1rem;
+}
+
+.grid2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.grid2auto {
+  grid-template-columns: 1fr auto;
+}
+
+.grid2LongShort {
+  grid-template-columns: 1fr 1.75rem;
+}
+
+.grid2ShortLong {
+  grid-template-columns: 1.75rem 1fr;
+}
+
+.grid3equal {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.grid1_2_1 {
+  grid-template-columns: 1fr 2fr 1fr;
+}
+
+.repeatGrid {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.inputBox,
+.inputTextArea,
+.colorPicker {
+  padding: .35rem;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  height: 2rem;
+}
+
+.inputTextArea {
+  height: auto;
+  resize: vertical;
+  min-height: 3rem;
+}
+
+.colorPicker {
+  padding: 0;
+  cursor: pointer;
+}
+
+.button,
+.addButton,
+.deleteButton {
+  padding: .125rem;
+  background: var(--foreground);
+  color: var(--background);
+  border: 0;
+  border-radius: 6px;
+  height: 1.5rem;
+  cursor: pointer;
+}
+
+.deleteButton {
+  color: var(--warning);
+  background-color: var(--background);
+  border: 1px solid var(--warning);
+  width: 2.5rem;
+}
+
+.listScrollable {
+  margin: .25rem 0;
+  padding-left: 1.1rem;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.listScrollable a {
+  word-break: break-all;
+}
+
+/* Ensure inputs shrink properly in flex/grid containers */
+.container input,
+.container textarea,
+.container select {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .headerRow {
+    flex-wrap: wrap;
+  }
+  .grid3equal,
+  .grid1_2_1,
+  .repeatGrid,
+  .bottomGrid2 {
+    grid-template-columns: 1fr !important;
+  }
+  .container,
+  .section {
+    padding: .5rem;
+  }
+}

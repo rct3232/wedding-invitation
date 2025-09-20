@@ -27,6 +27,10 @@
   --foreground: #493628;
   --backgroundTranspernt: #F4F4F400;
   --foregroundTranspernt: #49362800;
+  --confirm: #2563EB;
+  --warning: #DC2626;
+  --caution: #F59E0B;
+  --outline: #E5E7EB;
 }
 
 html,
